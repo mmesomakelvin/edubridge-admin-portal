@@ -25,11 +25,11 @@ URL (`admin.edubridgeacademy.com`) with its own deployment, secrets, and login.
 
 ## What this portal does (scope)
 
-For each of the 6 learner programs (and Corporate, price-only):
+For each of the 6 learner programs (Corporate Training is out of scope):
 
 - **Cohort dates & seats** — add/edit/remove cohorts; open/close; live Open/Full/Ended status.
 - **Pricing** — price labels, amounts, installment text, hero price label.
-- **Landing image** — replace the per-course hero/homepage image.
+- **Landing image** — replace the program's homepage card image.
 
 **Out of scope:** page copy, FAQs, testimonials, partners, SEO, new-program creation,
 per-user accounts.
