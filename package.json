@@ -1,0 +1,53 @@
+{
+  "name": "edubridge-admin-portal",
+  "version": "1.0.0",
+  "description": "Internal admin portal that lets trusted EduBridge staff change **program dates**, **pricing**, and **landing/placeholder images** for every course — without a developer or a redeploy. Changes appear on the public site (`www.edubridgeacademy.com`) within seconds of publishing.",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "seed": "tsx --env-file=.env.local scripts/seed.ts",
+    "parity": "tsx --env-file=.env.local scripts/parity.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mmesomakelvin/edubridge-admin-portal.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/mmesomakelvin/edubridge-admin-portal/issues"
+  },
+  "homepage": "https://github.com/mmesomakelvin/edubridge-admin-portal#readme",
+  "private": "true",
+  "engines": {
+    "node": ">=20.9"
+  },
+  "dependencies": {
+    "@vercel/blob": "2.8.2",
+    "lucide-react": "1.57.0",
+    "next": "16.4.0",
+    "next-auth": "5.0.0-beta.32",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "server-only": "0.0.1",
+    "sharp": "0.35.5",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "24.19.2",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "tsx": "4.23.15",
+    "typescript": "5.9.3",
+    "vitest": "4.1.11"
+  }
+}
