@@ -1,0 +1,374 @@
+<title>EduBridge Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap">
+<style>
+  /* Layout: fixed left sidebar + main console. Committed light look —
+     clean white ground, soft-grey panels, EduBridge green accent used with restraint. */
+  :root{
+    --bg:#ffffff; --canvas:#f7f9fa; --panel:#ffffff; --panel-2:#f3f6f7; --raise:#eef2f3;
+    --border:#e2e8ea; --border-soft:#eceff1; --hair:#eef1f2;
+    --fg:#13232a; --muted:#5a6b72; --faint:#8a989e;
+    --green:#5eb229; --green-deep:#016938; --green-ink:#ffffff;
+    --teal:#154b54; --gold:#f2c94c;
+    --open-bg:#e9f6dd; --open-fg:#357a12;
+    --full-bg:#fdf1cf; --full-fg:#8a6b10;
+    --ended-bg:#eef1f3; --ended-fg:#66757b;
+    --ring:0 0 0 1px rgba(94,178,41,.35);
+    --shadow:0 1px 2px rgba(19,35,42,.05), 0 12px 28px -16px rgba(19,35,42,.22);
+    --shadow-sm:0 1px 2px rgba(19,35,42,.06);
+    --radius:14px;
+    --font:"Poppins", ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    color-scheme:light;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0; background:
+      radial-gradient(1100px 480px at 82% -10%, rgba(21,75,84,.05), transparent 60%),
+      radial-gradient(760px 420px at -5% 110%, rgba(94,178,41,.06), transparent 55%),
+      var(--canvas);
+    color:var(--fg); font-family:var(--font); line-height:1.5; -webkit-font-smoothing:antialiased}
+  h1,h2,h3{margin:0; text-wrap:balance; font-weight:600; letter-spacing:-.015em}
+  button{font-family:inherit}
+  a{color:inherit}
+
+  .app{display:grid; grid-template-columns:238px 1fr; min-height:100%}
+
+  /* sidebar */
+  .side{position:sticky; top:0; align-self:start; height:100vh; display:flex; flex-direction:column;
+    background:var(--bg); border-right:1px solid var(--border-soft); padding:18px 14px; gap:6px}
+  .logo{display:flex; align-items:center; gap:10px; padding:6px 8px 16px}
+  .logo .mark{width:30px;height:30px;border-radius:9px;background:linear-gradient(140deg,var(--green),var(--green-deep));
+    display:grid;place-items:center;color:#fff;font-weight:800;font-size:17px;box-shadow:0 6px 14px -6px rgba(94,178,41,.55)}
+  .logo b{font-weight:600; font-size:14.5px}
+  .logo b span{display:block; font-size:10.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--faint); font-weight:600}
+  .nav{display:flex; flex-direction:column; gap:3px; margin-top:4px}
+  .nav button{display:flex; align-items:center; gap:11px; width:100%; text-align:left; border:0; cursor:pointer;
+    background:transparent; color:var(--muted); font-weight:500; font-size:13.5px; padding:9px 11px; border-radius:10px}
+  .nav button .i{width:17px;height:17px;opacity:.8;flex:none}
+  .nav button:hover{background:var(--panel-2); color:var(--fg)}
+  .nav button[aria-current="true"]{background:var(--open-bg); color:var(--green-deep); font-weight:600; position:relative}
+  .nav button[aria-current="true"] .i{opacity:1}
+  .nav button[aria-current="true"]::before{content:""; position:absolute; left:-14px; top:9px; bottom:9px; width:3px;
+    border-radius:0 3px 3px 0; background:var(--green)}
+  .nav .label{margin:14px 11px 4px; font-size:10.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--faint); font-weight:600}
+  .side .foot{margin-top:auto}
+  .acct{display:flex; align-items:center; gap:10px; background:var(--panel-2); border:1px solid var(--border-soft);
+    padding:8px 10px; border-radius:12px}
+  .acct .av{width:30px;height:30px;border-radius:999px;background:linear-gradient(140deg,var(--teal),#2b7f8c);
+    display:grid;place-items:center;color:#fff;font-weight:800;font-size:12px}
+  .acct .who{min-width:0}
+  .acct .who b{display:block;font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .acct .who span{display:block;font-size:10.5px;color:var(--faint)}
+
+  /* main */
+  .main{min-width:0; display:flex; flex-direction:column}
+  .top{position:sticky; top:env(safe-area-inset-top,0px); z-index:10; display:flex; align-items:center; gap:14px;
+    padding:16px 26px; background:rgba(255,255,255,.78); backdrop-filter:blur(10px); border-bottom:1px solid var(--hair)}
+  .top .crumb{font-size:12.5px; color:var(--faint)}
+  .top .crumb b{color:var(--muted); font-weight:500}
+  .top .sp{flex:1}
+  .live{display:inline-flex;align-items:center;gap:7px;color:var(--muted);text-decoration:none;font-size:12.5px;font-weight:500;
+    border:1px solid var(--border); padding:7px 12px; border-radius:9px; background:var(--panel)}
+  .live:hover{color:var(--green-deep); border-color:var(--green)}
+  .live .pulse{width:7px;height:7px;border-radius:999px;background:var(--green);box-shadow:0 0 0 3px rgba(94,178,41,.18)}
+
+  .content{padding:26px; max-width:960px; width:100%}
+  .phead{display:flex; align-items:flex-end; justify-content:space-between; gap:14px; flex-wrap:wrap; margin-bottom:4px}
+  .phead h1{font-size:23px; font-weight:600}
+  .phead .meta{font-size:12px; color:var(--faint); font-variant-numeric:tabular-nums}
+  .psub{color:var(--muted); font-size:13.5px; margin:4px 0 20px; max-width:62ch}
+
+  /* program list */
+  .list{display:flex; flex-direction:column; gap:10px}
+  .row{display:grid; grid-template-columns:46px 1fr auto auto; align-items:center; gap:16px;
+    background:var(--panel); border:1px solid var(--border-soft); border-radius:var(--radius);
+    padding:13px 15px; box-shadow:var(--shadow-sm); transition:border-color .15s, transform .15s, box-shadow .15s}
+  .row:hover{border-color:var(--border); transform:translateY(-1px); box-shadow:var(--shadow)}
+  .thumb{width:46px;height:46px;border-radius:11px;min-width:0;box-shadow:inset 0 0 0 1px rgba(0,0,0,.05)}
+  .t1{background:linear-gradient(140deg,#2b8491,#154b54)}
+  .t2{background:linear-gradient(140deg,#8a5bbd,#4a154b)}
+  .t3{background:linear-gradient(140deg,#43a86a,#016938)}
+  .t4{background:linear-gradient(140deg,#e0b43a,#a07f14)}
+  .t5{background:linear-gradient(140deg,#3b93c6,#1c4f70)}
+  .t6{background:linear-gradient(140deg,#5eb229,#2f6d12)}
+  .nm{min-width:0}
+  .nm b{display:block;font-weight:600;font-size:14.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .nm span{display:block;color:var(--muted);font-size:12.5px;margin-top:3px;font-variant-numeric:tabular-nums}
+  .nm span .dim{color:var(--faint)}
+  .price{font-size:13.5px;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap;display:inline-flex;align-items:center;gap:9px}
+  .edit{border:1px solid var(--border); background:var(--panel); color:var(--fg); font-weight:600; font-size:13px;
+    padding:8px 15px; border-radius:9px; cursor:pointer; white-space:nowrap}
+  .edit:hover{border-color:var(--green); color:var(--green-deep); box-shadow:var(--ring)}
+
+  .badge{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;padding:3px 10px;border-radius:999px}
+  .badge::before{content:"";width:6px;height:6px;border-radius:999px;background:currentColor}
+  .b-open{background:var(--open-bg);color:var(--open-fg)}
+  .b-full{background:var(--full-bg);color:var(--full-fg)}
+  .b-ended{background:var(--ended-bg);color:var(--ended-fg)}
+
+  /* editor */
+  .back{display:inline-flex;align-items:center;gap:7px;border:0;background:transparent;color:var(--muted);
+    font-size:12.5px;font-weight:500;cursor:pointer;padding:0;margin-bottom:12px}
+  .back:hover{color:var(--fg)}
+  .card{background:var(--panel); border:1px solid var(--border-soft); border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden}
+  .tabs{display:flex; gap:4px; padding:7px 8px; border-bottom:1px solid var(--hair); background:var(--panel-2)}
+  .tabs button{border:0;background:transparent;color:var(--muted);font-weight:600;font-size:13px;padding:8px 13px;
+    border-radius:9px;cursor:pointer}
+  .tabs button[aria-selected="true"]{background:var(--panel);color:var(--green-deep);box-shadow:var(--shadow-sm)}
+  .tabpad{padding:16px}
+
+  .ctable{width:100%;border-collapse:separate;border-spacing:0;font-size:13px;font-variant-numeric:tabular-nums}
+  .ctable th{text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--faint);font-weight:600;padding:0 10px 10px}
+  .ctable td{padding:7px 10px;border-top:1px solid var(--hair);vertical-align:middle}
+  .ctable tr.active td{background:rgba(94,178,41,.05)}
+  .cell{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--border);background:var(--panel);border-radius:8px;
+    padding:6px 10px;font-size:12.5px;color:var(--fg);min-width:0}
+  .cell.num{width:60px;justify-content:center}
+  .cell .cal{opacity:.5}
+  .ctable td.rowname{font-weight:600;white-space:nowrap}
+  .tools{color:var(--faint);font-size:17px;cursor:pointer;user-select:none;line-height:1}
+  .addrow{margin-top:14px;border:1px dashed var(--border);background:transparent;color:var(--muted);font-weight:600;
+    font-size:12.5px;padding:10px;border-radius:10px;width:100%;cursor:pointer}
+  .addrow:hover{border-color:var(--green);color:var(--green-deep)}
+
+  .publish{margin-top:16px;background:var(--panel);border:1px solid var(--border-soft);border-radius:var(--radius);
+    box-shadow:var(--shadow);padding:16px}
+  .publish h3{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--faint);font-weight:600;margin-bottom:11px}
+  .diff{list-style:none;margin:0 0 15px;padding:0;display:flex;flex-direction:column;gap:9px;font-size:13px}
+  .diff li{display:flex;gap:10px;align-items:flex-start;color:var(--muted)}
+  .diff li::before{content:"";margin-top:7px;width:6px;height:6px;border-radius:999px;background:var(--gold);flex:none}
+  .diff b{color:var(--fg);font-weight:600}
+  .was{text-decoration:line-through;color:var(--faint)}
+  .pubrow{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .btn-primary{border:0;background:linear-gradient(180deg,var(--green),var(--green-deep));color:var(--green-ink);font-weight:700;
+    font-size:13.5px;padding:11px 20px;border-radius:11px;cursor:pointer;box-shadow:0 8px 20px -10px rgba(94,178,41,.6)}
+  .btn-primary:hover{filter:brightness(1.04)}
+  .btn-ghost{border:1px solid var(--border);background:var(--panel);color:var(--muted);font-weight:600;font-size:13px;
+    padding:11px 15px;border-radius:11px;cursor:pointer}
+  .btn-ghost:hover{color:var(--fg)}
+  .hint{color:var(--faint);font-size:12px}
+
+  .note{max-width:960px;margin:6px auto 30px;padding:0 26px;color:var(--faint);font-size:11.5px}
+
+  .toast{position:fixed;left:50%;bottom:calc(22px + env(safe-area-inset-bottom,0px));transform:translateX(-50%) translateY(10px);
+    background:var(--teal);border:1px solid rgba(21,75,84,.5);color:#eef7f8;padding:12px 15px;border-radius:12px;
+    box-shadow:var(--shadow);font-size:13.5px;font-weight:500;display:flex;align-items:center;gap:11px;
+    opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;z-index:40;max-width:calc(100% - 32px)}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .toast .ok{width:21px;height:21px;border-radius:999px;background:var(--green);color:#fff;display:grid;place-items:center;font-size:12px;font-weight:800}
+  .toast a{color:#bfe9a2;font-weight:600;text-decoration:none;white-space:nowrap}
+
+  /* responsive: collapse sidebar to a top strip */
+  @media (max-width:760px){
+    .app{grid-template-columns:1fr}
+    .side{position:static;height:auto;flex-direction:row;align-items:center;gap:10px;overflow-x:auto;padding:10px 12px;
+      border-right:0;border-bottom:1px solid var(--border-soft)}
+    .logo{padding:0 6px 0 2px}
+    .logo b span{display:none}
+    .nav{flex-direction:row;margin:0;gap:4px}
+    .nav .label{display:none}
+    .nav button[aria-current="true"]::before{display:none}
+    .side .foot{margin-left:auto}
+    .acct .who{display:none}
+    .content{padding:18px 16px}
+    .top{padding:14px 16px}
+    .row{grid-template-columns:40px 1fr; grid-template-areas:"t n" "p p" "e e"; row-gap:11px}
+    .thumb{grid-area:t}.nm{grid-area:n}.edit{grid-area:e;justify-self:start}
+    .row .price{grid-area:p}
+  }
+  @media (prefers-reduced-motion:reduce){.row,.toast{transition:none}}
+</style>
+
+<div class="app">
+  <!-- SIDEBAR -->
+  <aside class="side">
+    <div class="logo">
+      <span class="mark">E</span>
+      <b>EduBridge<span>Admin</span></b>
+    </div>
+    <div class="nav" role="tablist">
+      <div class="label">Manage</div>
+      <button role="tab" aria-current="true" data-screen="dash">
+        <svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+        Dashboard
+      </button>
+      <button role="tab" aria-current="false" data-screen="dash">
+        <svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+        Programs
+      </button>
+      <button role="tab" aria-current="false" data-screen="dash">
+        <svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m4 19 5-4 4 3 3-3 4 4"/></svg>
+        Images
+      </button>
+      <div class="label">Account</div>
+      <button role="tab" aria-current="false" data-screen="dash">
+        <svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v4l3 2"/><circle cx="12" cy="12" r="9"/></svg>
+        Activity
+      </button>
+    </div>
+    <div class="foot">
+      <div class="acct">
+        <span class="av">H</span>
+        <span class="who"><b>hello@edubridge…</b><span>Signed in · Google</span></span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="top">
+      <span class="crumb" id="crumb"><b>Programs</b></span>
+      <span class="sp"></span>
+      <a class="live" href="https://www.edubridgeacademy.com"><span class="pulse"></span>View live site ↗</a>
+    </div>
+
+    <!-- DASHBOARD -->
+    <div class="content" id="dash">
+      <div class="phead">
+        <h1>Programs</h1>
+        <span class="meta">Last published by hello@ · 14 Oct 2026, 12:30</span>
+      </div>
+      <p class="psub">Edit cohort dates, pricing, and the landing image for each program. Published changes reach the public site in a few seconds.</p>
+
+      <div class="list">
+        <div class="row">
+          <div class="thumb t1"></div>
+          <div class="nm"><b>School of Finance</b><span>Next open <b style="color:var(--fg)">Q1 2027 · 23 Jan</b> <span class="dim">· 8 weekends</span></span></div>
+          <span class="price">₦175,000 <span class="badge b-open">Open</span></span>
+          <button class="edit">Edit</button>
+        </div>
+        <div class="row">
+          <div class="thumb t2"></div>
+          <div class="nm"><b>School of Management Consulting</b><span>Next open <b style="color:var(--fg)">Q1 2027 · 23 Jan</b> <span class="dim">· 8 weekends</span></span></div>
+          <span class="price">₦175,000 <span class="badge b-open">Open</span></span>
+          <button class="edit">Edit</button>
+        </div>
+        <div class="row">
+          <div class="thumb t3"></div>
+          <div class="nm"><b>Data School</b><span>Next open <b style="color:var(--fg)">Q1 2027 · 16 Jan</b></span></div>
+          <span class="price">₦175,000 <span class="badge b-open">Open</span></span>
+          <button class="edit">Edit</button>
+        </div>
+        <div class="row">
+          <div class="thumb t4"></div>
+          <div class="nm"><b>Advanced Financial Modeling &amp; Valuation</b><span><span class="dim">No open cohort</span></span></div>
+          <span class="price">₦150,000 <span class="badge b-ended">Dates soon</span></span>
+          <button class="edit">Edit</button>
+        </div>
+        <div class="row">
+          <div class="thumb t5"></div>
+          <div class="nm"><b>School of HR and Analytics</b><span>Next open <b style="color:var(--fg)">Q1 2027 · 6 Feb</b></span></div>
+          <span class="price">₦150,000 <span class="badge b-open">Open</span></span>
+          <button class="edit">Edit</button>
+        </div>
+        <div class="row">
+          <div class="thumb t6"></div>
+          <div class="nm"><b>Project Finance Modeling</b><span><b style="color:var(--fg)">Q4 2026</b> <span class="dim">· in session</span></span></div>
+          <span class="price">₦120,000 <span class="badge b-full">Full</span></span>
+          <button class="edit">Edit</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- EDITOR -->
+    <div class="content" id="editor" hidden>
+      <button class="back" id="back">← Back to programs</button>
+      <div class="phead">
+        <h1>School of Finance</h1>
+        <span class="meta"><a class="live" style="padding:5px 10px" href="https://www.edubridgeacademy.com/school-of-finance"><span class="pulse"></span>View live page ↗</a></span>
+      </div>
+      <p class="psub">Three things you can change here. Everything else on the page stays as designed.</p>
+
+      <div class="card">
+        <div class="tabs" role="tablist">
+          <button role="tab" aria-selected="true">Cohorts</button>
+          <button role="tab" aria-selected="false">Pricing</button>
+          <button role="tab" aria-selected="false">Landing image</button>
+        </div>
+        <div class="tabpad">
+          <div style="overflow-x:auto">
+          <table class="ctable">
+            <thead><tr>
+              <th>Cohort</th><th>Start</th><th>End</th><th>Seats left</th><th>Of</th><th>Status</th><th></th>
+            </tr></thead>
+            <tbody>
+              <tr>
+                <td class="rowname">Q3 2026</td>
+                <td><span class="cell"><span class="cal">◱</span>11 Jul 2026</span></td>
+                <td><span class="cell">30 Aug 2026</span></td>
+                <td><span class="cell num">0</span></td>
+                <td><span class="cell num">100</span></td>
+                <td><span class="badge b-ended">Ended</span></td>
+                <td><span class="tools">⋯</span></td>
+              </tr>
+              <tr>
+                <td class="rowname">Q4 2026</td>
+                <td><span class="cell"><span class="cal">◱</span>10 Oct 2026</span></td>
+                <td><span class="cell">29 Nov 2026</span></td>
+                <td><span class="cell num">0</span></td>
+                <td><span class="cell num">120</span></td>
+                <td><span class="badge b-full">Full</span></td>
+                <td><span class="tools">⋯</span></td>
+              </tr>
+              <tr class="active">
+                <td class="rowname">Q1 2027</td>
+                <td><span class="cell"><span class="cal">◱</span>23 Jan 2027</span></td>
+                <td><span class="cell">21 Mar 2027</span></td>
+                <td><span class="cell num">100</span></td>
+                <td><span class="cell num">100</span></td>
+                <td><span class="badge b-open">Open</span></td>
+                <td><span class="tools">⋯</span></td>
+              </tr>
+            </tbody>
+          </table>
+          </div>
+          <button class="addrow">+ Add cohort</button>
+        </div>
+      </div>
+
+      <div class="publish">
+        <h3>Review &amp; publish</h3>
+        <ul class="diff">
+          <li><span><b>Q4 2026</b> — seats left <span class="was">20</span> → <b>0</b> &nbsp;(now shows “Cohort full”)</span></li>
+          <li><span><b>Q1 2027</b> — start <span class="was">16 Jan</span> → <b>23 Jan 2027</b>, end <span class="was">14 Mar</span> → <b>21 Mar 2027</b></span></li>
+          <li><span>Pricing &amp; landing image — <b>unchanged</b></span></li>
+        </ul>
+        <div class="pubrow">
+          <button class="btn-primary" id="pub">Publish changes</button>
+          <button class="btn-ghost">Discard</button>
+          <span class="hint">Live on the public site in a few seconds.</span>
+        </div>
+      </div>
+    </div>
+
+    <p class="note">Mockup — static preview of the admin portal. Buttons are illustrative; real editing, uploads and publishing come with the build.</p>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite">
+  <span class="ok">✓</span> Published — live in a few seconds. <a href="https://www.edubridgeacademy.com/school-of-finance">View live page ↗</a>
+</div>
+
+<script>
+  var dash=document.getElementById('dash'), editor=document.getElementById('editor'), crumb=document.getElementById('crumb');
+  function show(ed){ editor.hidden=!ed; dash.hidden=ed; crumb.innerHTML= ed ? 'Programs&nbsp;&nbsp;<b>/ School of Finance</b>' : '<b>Programs</b>'; window.scrollTo({top:0}); }
+  document.querySelectorAll('#dash .edit').forEach(function(b){ b.addEventListener('click',function(){show(true);}); });
+  document.getElementById('back').addEventListener('click',function(){show(false);});
+  document.querySelectorAll('.nav button').forEach(function(b){
+    b.addEventListener('click',function(){
+      document.querySelectorAll('.nav button').forEach(function(x){x.setAttribute('aria-current','false')});
+      b.setAttribute('aria-current','true'); show(false);
+    });
+  });
+  document.querySelectorAll('.tabs button').forEach(function(b){
+    b.addEventListener('click',function(){
+      document.querySelectorAll('.tabs button').forEach(function(x){x.setAttribute('aria-selected','false')});
+      b.setAttribute('aria-selected','true');
+    });
+  });
+  var toast=document.getElementById('toast');
+  document.getElementById('pub').addEventListener('click',function(){
+    toast.classList.add('show'); setTimeout(function(){toast.classList.remove('show');},3200);
+  });
+</script>
