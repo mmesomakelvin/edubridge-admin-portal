@@ -1,0 +1,85 @@
+/* Colours: EduBridge Brand Style Guide 2025 (p.5 palette, p.7 greys) mapped to semantic roles.
+   Rule: brand green and gold are too light for text on white (2.7:1, 1.6:1) — use them only for
+   dots, borders, rings and fills. Every text/background pair below passes WCAG AA (≥ 4.5:1). */
+:root {
+  /* Brand palette */
+  --brand-teal: #154b54; --brand-green: #5eb229; --brand-navy: #040084; --brand-green-deep: #016938;
+  --brand-yellow: #ffe76c; --brand-gold: #f2c94c; --brand-plum: #4a154b;
+  --grey-900: #1a1a1a; --grey-700: #595959; --grey-500: #737373; --grey-300: #b3b3b3;
+
+  /* Surfaces + text */
+  --bg: #ffffff; --canvas: #f7f9fa; --panel: #ffffff; --panel-2: #f3f6f7; --raise: #e7ecee;
+  --border: #dfe6e8; --border-soft: #eaeef0; --hair: #edf1f2;
+  --fg: #13232a; --muted: #55676e; --faint: var(--grey-500);
+  --ink: var(--brand-teal);                       /* headings accents, avatar */
+
+  /* Semantic roles */
+  --primary: var(--brand-green-deep); --primary-hover: #015a30; --on-primary: #ffffff;  /* 6.8:1 */
+  --accent: var(--brand-green);                   /* focus ring, active rail — never text */
+  --success-fg: var(--brand-green-deep); --success-bg: #eaf6e1; --success-border: #bfe3a6;   /* 6.1:1 */
+  --warning-fg: #6b5200; --warning-bg: #fff6c7; --warning-border: var(--brand-gold);       /* 6.8:1 */
+  --danger-fg: #b42318; --danger-bg: #fdecea; --danger-border: #f1c2bd;                   /* 5.8:1 */
+  --info-fg: var(--brand-navy); --info-bg: #ecebfa; --info-border: #c9c7f0;               /* 13.3:1 */
+  --draft-fg: var(--brand-plum); --draft-bg: #f4eaf4; --draft-border: #dcc3dc;            /* 12.0:1 */
+  --neutral-fg: var(--grey-700); --neutral-bg: #f0f2f2;                                   /* 6.2:1 */
+  /* Danger red is the only colour outside the brand palette: errors and destructive actions only. */
+
+  /* Status aliases used by components */
+  --open-bg: var(--success-bg); --open-fg: var(--success-fg);
+  --full-bg: var(--warning-bg); --full-fg: var(--warning-fg);
+  --ended-bg: var(--neutral-bg); --ended-fg: var(--neutral-fg);
+  --danger: var(--danger-fg);
+  --green: var(--accent); --green-deep: var(--primary); --green-hover: var(--primary-hover); --teal: var(--ink);
+
+  --ring: 0 0 0 3px rgba(94, 178, 41, 0.22);
+  --shadow: 0 1px 2px rgba(19, 35, 42, 0.05), 0 14px 30px -18px rgba(19, 35, 42, 0.28);
+  --shadow-sm: 0 1px 2px rgba(19, 35, 42, 0.06);
+  --radius: 14px;
+  --font: var(--font-poppins), ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0; background: var(--canvas); color: var(--fg); font-family: var(--font);
+  font-size: 14px; line-height: 1.5; -webkit-font-smoothing: antialiased;
+}
+h1, h2, h3 { margin: 0; font-weight: 600; letter-spacing: -0.015em; text-wrap: balance; }
+p { margin: 0; }
+button, input, select, textarea { font: inherit; color: inherit; }
+a { color: inherit; }
+:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.meta { font-size: 12px; color: var(--faint); font-variant-numeric: tabular-nums; }
+.muted { color: var(--muted); }
+
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 10px 16px;
+  border-radius: 10px; border: 1px solid transparent; background: none; font-weight: 600; font-size: 13.5px;
+  text-decoration: none; cursor: pointer; white-space: nowrap;
+  transition: background .15s, border-color .15s, box-shadow .15s, color .15s;
+}
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+.btn-primary { background: var(--green-deep); color: #fff; }
+.btn-primary:not(:disabled):hover { background: var(--green-hover); box-shadow: var(--ring); }
+.btn-outline { background: var(--panel); border-color: var(--border); color: var(--fg); }
+.btn-outline:not(:disabled):hover { border-color: var(--green); color: var(--green-deep); }
+.btn-danger { background: var(--panel); border-color: var(--danger-border); color: var(--danger); }
+.btn-danger:not(:disabled):hover { background: var(--danger-bg); }
+.btn-ghost { color: var(--muted); }
+.btn-ghost:hover { color: var(--fg); background: var(--panel-2); }
+
+.pill { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px; font-size: 11.5px; font-weight: 600; white-space: nowrap; }
+.pill::before { content: ''; width: 6px; height: 6px; border-radius: 999px; background: currentColor; }
+.pill-open { background: var(--open-bg); color: var(--open-fg); }
+.pill-full { background: var(--full-bg); color: var(--full-fg); }
+.pill-ended, .pill-none { background: var(--ended-bg); color: var(--ended-fg); }
+
+.banner { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 12px 14px; border-radius: 12px; font-size: 13px; margin-bottom: 16px; }
+.banner a { font-weight: 600; }
+.banner-ok { background: var(--success-bg); color: var(--success-fg); }
+.banner-warn { background: var(--warning-bg); color: var(--warning-fg); }
+.banner-error { background: var(--danger-bg); color: var(--danger-fg); }
+.banner-info { background: var(--info-bg); color: var(--info-fg); }
+.chip-draft { display: inline-flex; align-items: center; padding: 2px 9px; border-radius: 999px; font-size: 11.5px; font-weight: 600; background: var(--draft-bg); color: var(--draft-fg); border: 1px solid var(--draft-border); }
