@@ -24,7 +24,10 @@ redeploy, no desynced automation.
 ### In scope
 - Edit **cohort dates & seats** (start, end, format, seatsRemaining, totalSeats; open/close) per program.
 - Edit **pricing** (price labels, amounts, installment text, hero price label) per program.
-- Replace **landing/placeholder images** (program hero + homepage card) per program.
+- Replace the **landing image** per program — the image on its homepage program card
+  (program pages have no hero image today; `ProgramCard.tsx` is the only consumer).
+- Scope is the **6 learner programs only**. Corporate Training is excluded entirely (it has
+  no prices or cohorts in the site data; it stays in code).
 - A single shared, Google-locked login.
 - Keeping the win-back automation's cohort feed in sync.
 
@@ -79,18 +82,38 @@ Fixes GitHub issue #5 as a side effect: editable dates become a single source of
       "heroPriceLabel": "₦175,000 · or 2 installments of ₦87,500",
       "landingImageUrl": "https://…blob…/finance-<hash>.jpg"
     }
-    // data-school, school-of-management-consulting, advanced-financial-modeling,
-    // school-of-hr-and-analytics, project-finance-modeling, (corporate: price-only)
+    // data-school, school-of-mgmt-consulting, advanced-financial-modeling,
+    // school-of-hr-and-analytics, project-finance-modeling
   }
 }
 ```
 
+**Program keys** are the public repo's **folder slugs** (`product/sections/<slug>/`), the
+same keys `public/cohorts.json` and the Apps Script win-back sheet already use. Note the
+consulting key is `school-of-mgmt-consulting` even though its URL is
+`/school-of-management-consulting`. The portal keeps a fixed slug → `{ name, href,
+homeCardId }` map (e.g. `school-of-finance → prog-1`, `school-of-hr-and-analytics →
+prog-hr`) so it can link to live pages and the overlay can find each homepage card.
+
+### Derived, never edited
+Two pieces of public text are **computed from `cohorts`**, not stored:
+- Program hero `heroContent.nextCohortLabel` ("Next cohort starts Saturday, 23 January 2027").
+- Homepage card `nextCohort` ("January 2027").
+
+Both are hard-coded today and already stale (e.g. the Finance card says "October 2026"
+while the real next open cohort is 23 Jan 2027) — this is the real root of issue #5. The
+overlay derives them from the earliest `open` cohort (`cohort-status` logic). When none
+is open: hero label = "New cohort dates coming soon", card `nextCohort` = `null` (the card
+already renders `null` for Corporate, so no new UI). The homepage card
+`price` is likewise derived from the `full` pricing option's `amount`.
+
 ### Overlay strategy
 Each program page/home card starts from its build-time `data.json` (safe fallback),
 then **replaces three sub-objects wholesale** for that program: `cohorts`, `pricing`
-(+ `heroPriceLabel`), and the landing `imageUrl`. Wholesale replacement avoids fragile
-per-field merging. Homepage cards read the **same** per-program entries, so image/price
-have one source, not two.
+(+ `heroPriceLabel` → `heroContent.priceLabel`), and the homepage card `imageUrl`.
+Wholesale replacement avoids fragile per-field merging. Homepage cards read the **same**
+per-program entries, so image/price/next-cohort have one source, not two. A program
+missing from `content.json` (or a malformed entry) keeps its build-time defaults.
 
 ### Validation (enforced in portal before save)
 - **Dates:** valid ISO; `start < end`; past-dated start allowed but **warned**.
@@ -110,16 +133,16 @@ seeded values against what the site renders today (expect zero visible change).
 **1. Login** — single "Sign in with Google" button, locked to `hello@edubridgeacademy.com`;
 any other account → "Not authorized."
 
-**2. Dashboard** — one row per program: thumbnail · name · **next open cohort** (computed
-with existing `cohort-status` logic) · current price · **Edit**. Header: "Last published
-by hello@ · <time>" + "View live site ↗". Corporate shown price-only (no cohorts).
+**2. Dashboard** — one row per program (the 6 learner programs): thumbnail · name ·
+**next open cohort** (computed with the same `cohort-status` logic, ported verbatim) ·
+current price · **Edit**. Header: "Last published by hello@ · <time>" + "View live site ↗".
 
 **3. Program editor** (per program, three tabs):
 - **Cohorts** — table of cohort rows (add/edit/remove): name, start/end date pickers,
   format, seats, and a live **Open / Full / Ended** status badge matching public output.
 - **Pricing** — edit each pricing option + hero price label, inline validation.
 - **Landing image** — current preview + drag-drop replace (auto-optimized), with a note
-  of where it appears (program hero + homepage card).
+  of where it appears (the program's card on the homepage).
 
 **4. Publish** — "Review & publish" shows a plain-language **diff** ("Q4 2026: seats 20 → 0;
 next start 16 Jan → 23 Jan"), confirm → validate → write to Blob → toast "Published — live
@@ -195,8 +218,9 @@ Each phase is shown locally / on a staging URL and approved before going live
 - **Vercel deploy quirk** (git-push deploys blocked; CLI deploys): the chosen runtime-store
   approach sidesteps it — a content change triggers no deploy.
 - **Shared account:** no per-user audit by design; "updatedBy" is always `hello@`.
-- **Caching freshness:** short edge TTL + `version` cache-bust keeps reads fast and fresh;
-  tune TTL during Phase 2.
+- **Caching freshness:** `content.json` is served with a **60 s** cache max-age (Blob
+  `cacheControlMaxAge: 60`), i.e. "live within about a minute". Revisit only if staff find
+  it too slow.
 - **Auth provider provisioning:** Google OAuth + Auth.js are free/first-party (no
   Marketplace dependency); Vercel Blob is first-party storage.
 
@@ -224,7 +248,10 @@ Each phase is shown locally / on a staging URL and approved before going live
 - **Visual direction:** light "command console" — white ground, left sidebar, EduBridge
   green accent used with restraint (see `design/mockup.html`).
 
+- **Corporate excluded** — portal covers the 6 learner programs only (2026-10-14).
+- **Keys = folder slugs** (match `cohorts.json` + win-back sheet) (2026-10-14).
+- **Next-cohort text is derived**, never edited (fixes issue #5 at the root) (2026-10-14).
+- **`content.json` TTL = 60 s** (2026-10-14).
+
 **Open (for plan stage):**
-- Exact program slugs/keys to include for Corporate (price-only) vs the 6 learner programs.
-- Final edge-cache TTL for `content.json`.
 - Hosting detail: new GitHub repo + new Vercel project for `admin.edubridgeacademy.com`.
