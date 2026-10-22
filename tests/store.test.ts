@@ -1,0 +1,69 @@
+import { describe, expect, it } from 'vitest'
+import { createMemoryStore } from '@/lib/memory-store'
+import { ConflictError, NotSeededError, backupInfoFromPathname, backupPathname, recentPublishes } from '@/lib/store'
+import { content } from './fixtures'
+
+describe('backup pathnames', () => {
+  it('round-trips version and time', () => {
+    const pathname = backupPathname(12, new Date('2026-10-14T12:30:05.123Z'))
+    expect(pathname).toBe('backups/content-v000012-2026-10-14T12-30-05-123Z.json')
+    expect(backupInfoFromPathname(pathname)).toEqual({ pathname, version: 12, savedAt: '2026-10-14T12:30:05.123Z' })
+  })
+  it('ignores unrelated files', () => {
+    expect(backupInfoFromPathname('backups/notes.txt')).toBeNull()
+  })
+})
+
+describe('recentPublishes', () => {
+  it('turns backups into the versions that replaced them, newest first', () => {
+    const backups = [
+      { pathname: 'c', version: 3, savedAt: '2026-10-14T12:00:00.000Z' },
+      { pathname: 'b', version: 2, savedAt: '2026-10-13T12:00:00.000Z' },
+      { pathname: 'a', version: 1, savedAt: '2026-10-12T12:00:00.000Z' },
+    ]
+    expect(recentPublishes(backups, 2)).toEqual([
+      { version: 4, at: '2026-10-14T12:00:00.000Z' },
+      { version: 3, at: '2026-10-13T12:00:00.000Z' },
+    ])
+  })
+})
+
+describe('memory store', () => {
+  it('reports an unseeded store', async () => {
+    await expect(createMemoryStore().readContent()).rejects.toBeInstanceOf(NotSeededError)
+  })
+
+  it('creates content only once', async () => {
+    const store = createMemoryStore()
+    await store.createContent(content())
+    await expect(store.createContent(content())).rejects.toThrow(/already exists/)
+  })
+
+  it('rejects writes made with a stale etag', async () => {
+    const store = createMemoryStore(content())
+    const { etag } = await store.readContent()
+    await store.writeContent(content({ version: 2 }), etag)
+    await expect(store.writeContent(content({ version: 3 }), etag)).rejects.toBeInstanceOf(ConflictError)
+  })
+
+  it('hands out copies, not live references', async () => {
+    const store = createMemoryStore(content())
+    const first = await store.readContent()
+    first.content.version = 99
+    expect((await store.readContent()).content.version).toBe(1)
+  })
+
+  it('lists backups newest first and reads them back', async () => {
+    const store = createMemoryStore(content())
+    await store.writeBackup(content({ version: 1 }), new Date('2026-10-14T10:00:00Z'))
+    await store.writeBackup(content({ version: 2 }), new Date('2026-10-14T11:00:00Z'))
+    const backups = await store.listBackups()
+    expect(backups.map((b) => b.version)).toEqual([2, 1])
+    expect((await store.readBackup(backups[1]!.pathname)).version).toBe(1)
+  })
+
+  it('returns a data URL for images', async () => {
+    const url = await createMemoryStore().putImage('images/x.webp', Buffer.from('abc'), 'image/webp')
+    expect(url).toBe('data:image/webp;base64,YWJj')
+  })
+})
