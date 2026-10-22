@@ -12,37 +12,42 @@ interface Props {
   now: Date
 }
 
+/** One row of the programs table. The name link covers the whole row, so any cell selects it. */
 export function ProgramRow({ info, entry, selected, now }: Props) {
   if (!entry) {
     return (
-      <li className="row row-missing">
-        <span className="nm">
-          <b>{info.name}</b>
-          <span>Not in the content store yet</span>
-        </span>
-      </li>
+      <tr className="row-missing">
+        <td>
+          <span className="nm">
+            <b>{info.name}</b>
+          </span>
+        </td>
+        <td colSpan={5} className="muted">
+          Not in the content store yet
+        </td>
+      </tr>
     )
   }
   const next = nextOpenCohort(entry.cohorts, now)
   const full = entry.pricing.find((p) => p.id === 'full')
   return (
-    <li>
-      <Link href={`/?p=${info.slug}`} scroll={false} className="row" aria-current={selected ? 'true' : undefined}>
-        {/* eslint-disable-next-line @next/next/no-img-element -- Blob/data URLs, already optimised */}
-        <img className="thumb" src={entry.landingImageUrl} alt="" />
-        <span className="nm">
-          <b>{info.name}</b>
-          <span>
-            {entry.cohorts.length} {entry.cohorts.length === 1 ? 'cohort' : 'cohorts'} on file
-          </span>
+    <tr className={selected ? 'is-selected' : undefined}>
+      <td>
+        <span className="prog">
+          {/* eslint-disable-next-line @next/next/no-img-element -- Blob/data URLs, already optimised */}
+          <img className="thumb" src={entry.landingImageUrl} alt="" />
+          <Link href={`/?p=${info.slug}`} scroll={false} className="nm row-link" aria-current={selected ? 'true' : undefined}>
+            <b>{info.name}</b>
+          </Link>
         </span>
-        <span className="chip">{full ? formatNaira(full.amount) : '—'}</span>
-        <span className="when">
-          {next ? formatDay(next.startDate) : '—'}
-          <span>Next start</span>
-        </span>
+      </td>
+      <td className="num col-price">{full ? formatNaira(full.amount) : '—'}</td>
+      <td className="num col-next">{next ? formatDay(next.startDate) : '—'}</td>
+      <td className="num col-seats">{next ? `${next.seatsRemaining} of ${next.totalSeats}` : '—'}</td>
+      <td className="num col-count">{entry.cohorts.length}</td>
+      <td>
         <StatusPill status={programPill(entry.cohorts, now)} />
-      </Link>
-    </li>
+      </td>
+    </tr>
   )
 }

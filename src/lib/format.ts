@@ -12,6 +12,14 @@ const stampTime = new Intl.DateTimeFormat('en-GB', {
   timeZone: 'Africa/Lagos',
 })
 
+const lagosDay = new Intl.DateTimeFormat('en-CA', { year: 'numeric', month: '2-digit', day: '2-digit', timeZone: 'Africa/Lagos' })
+
+/** Day number of the Lagos calendar day containing this instant. */
+function lagosDayNumber(date: Date): number {
+  const [y, m, d] = lagosDay.format(date).split('-').map(Number) as [number, number, number]
+  return Date.UTC(y, m - 1, d) / 86_400_000
+}
+
 /** '2027-01-23' → '23 Jan 2027'. */
 export function formatDay(iso: string): string {
   const [y, m, d] = iso.split('-').map(Number) as [number, number, number]
@@ -27,4 +35,14 @@ export function formatNaira(n: number): string {
 export function formatStamp(iso: string): string {
   const date = new Date(iso)
   return `${stampDate.format(date)}, ${stampTime.format(date)}`
+}
+
+/** ISO timestamp → 'Today, 09:15' / 'Yesterday, 18:00' / '3 days ago' / '2 Sep 2026', by the Lagos calendar. */
+export function formatAgo(iso: string, now: Date = new Date()): string {
+  const date = new Date(iso)
+  const days = lagosDayNumber(now) - lagosDayNumber(date)
+  if (days <= 0) return `Today, ${stampTime.format(date)}`
+  if (days === 1) return `Yesterday, ${stampTime.format(date)}`
+  if (days <= 30) return `${days} days ago`
+  return stampDate.format(date)
 }
