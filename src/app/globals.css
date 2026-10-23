@@ -315,3 +315,10 @@ dialog.confirm::backdrop { background: rgba(19, 35, 42, .35); }
 dialog.confirm h2 { font-size: 17px; margin-bottom: 12px; }
 dialog.confirm .meta { margin-top: 12px; }
 dialog.confirm .actions { margin-top: 18px; }
+
+/* history */
+.history-actions { margin-bottom: 18px; }
+.hist-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 16px; background: var(--panel); border: 1px solid var(--border-soft); border-radius: var(--radius); box-shadow: var(--shadow-sm); }
+.hist-row b { font-weight: 600; }
+.history-empty { margin-top: 12px; }
+.list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }   /* history list; the programs list became a table in 12b */

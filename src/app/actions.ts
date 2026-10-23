@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { signOut } from '@/auth'
 import type { ProgramContent } from '@/lib/content-schema'
-import { publishProgram, type PublishResult } from '@/lib/publish'
+import { publishProgram, rollbackLastPublish, type PublishResult, type RollbackResult } from '@/lib/publish'
 import { requireAdmin, UnauthorizedError } from '@/lib/session'
 import { getStore } from '@/lib/store-instance'
 
@@ -23,6 +23,14 @@ export async function publishProgramAction(slug: string, draft: ProgramContent, 
   const by = await adminOrNull()
   if (!by) return { ok: false, reason: 'unauthorized' }
   const result = await publishProgram(await getStore(), { slug, draft, baseVersion, by })
+  if (result.ok) revalidatePath('/', 'layout')
+  return result
+}
+
+export async function rollbackAction(baseVersion: number): Promise<RollbackResult | Unauthorized> {
+  const by = await adminOrNull()
+  if (!by) return { ok: false, reason: 'unauthorized' }
+  const result = await rollbackLastPublish(await getStore(), { baseVersion, by })
   if (result.ok) revalidatePath('/', 'layout')
   return result
 }
