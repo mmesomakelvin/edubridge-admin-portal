@@ -1,5 +1,6 @@
 // Confirms the stored content matches the public repo exactly (run right after seeding).
 // Usage: npm run parity -- --public-repo "C:\path\to\ea-website-revamp"
+import { PROGRAMS } from '../src/lib/programs'
 import { parseArgs } from 'node:util'
 import { createBlobStore } from '../src/lib/blob-store'
 import { checkParity, createFsSource } from '../src/lib/seed'
@@ -20,4 +21,4 @@ if (problems.length > 0) {
   console.error(`Parity check FAILED:\n${problems.map((p) => ` - ${p}`).join('\n')}`)
   process.exit(1)
 }
-console.log('Parity check passed: content.json matches the public site data for all 6 programs.')
+console.log(`Parity check passed: content.json matches the public site data for all ${PROGRAMS.length} programs.`)
