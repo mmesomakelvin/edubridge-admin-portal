@@ -301,3 +301,17 @@ a { color: inherit; }
 @media (max-width: 760px) {
   .field-row { grid-template-columns: 1fr; }
 }
+
+/* review + confirm */
+.review-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.changes { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 6px; font-size: 13px; }
+.issues { border-radius: 12px; padding: 12px 14px; font-size: 12.5px; }
+.issues ul { margin: 6px 0 0; padding-left: 18px; }
+.issues-error { background: var(--danger-bg); color: var(--danger); }
+.issues-warn { background: var(--full-bg); color: var(--full-fg); }
+.empty-note { font-size: 13px; color: var(--muted); padding: 14px; border: 1px dashed var(--border); border-radius: 12px; }
+dialog.confirm { width: min(520px, calc(100vw - 32px)); border: 1px solid var(--border-soft); border-radius: 16px; padding: 22px; box-shadow: var(--shadow); background: var(--panel); color: var(--fg); }
+dialog.confirm::backdrop { background: rgba(19, 35, 42, .35); }
+dialog.confirm h2 { font-size: 17px; margin-bottom: 12px; }
+dialog.confirm .meta { margin-top: 12px; }
+dialog.confirm .actions { margin-top: 18px; }

@@ -11,6 +11,7 @@ import { validateProgram, type Issue } from '@/lib/validate'
 import { CohortsTab } from './CohortsTab'
 import { ImageTab } from './ImageTab'
 import { PricingTab } from './PricingTab'
+import { ReviewPanel } from './ReviewPanel'
 
 type Tab = 'cohorts' | 'pricing' | 'image'
 const TABS: { id: Tab; label: string; owns: (path: string) => boolean }[] = [
@@ -85,15 +86,14 @@ export function ProgramEditor({ info, initial, baseVersion, nowIso, publishedVer
           </div>
         </div>
       </section>
-      {/* Replaced by <ReviewPanel> in Task 14. */}
-      <aside className="pane-detail" aria-label="Review changes">
-        <h2 className="detail-title">Review changes</h2>
-        <ul className="changes">
-          {changes.map((line) => (
-            <li key={line}>{line}</li>
-          ))}
-        </ul>
-      </aside>
+      <ReviewPanel
+        info={info}
+        draft={draft}
+        issues={issues}
+        changes={changes}
+        baseVersion={baseVersion}
+        onDiscard={() => dispatch({ type: 'reset', value: initial })}
+      />
     </div>
   )
 }
