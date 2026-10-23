@@ -222,11 +222,12 @@ a { color: inherit; }
 @media (max-width: 760px) {
   .app { grid-template-columns: minmax(0, 1fr); }
   .side { position: static; height: auto; flex-direction: row; flex-wrap: wrap; align-items: center; gap: 10px; padding: 12px 16px; border-right: 0; border-bottom: 1px solid var(--border-soft); }
-  .side .recent, .who span, .side-foot .btn-ghost { display: none; }
+  .side .recent, .who span { display: none; }
   .acct { padding: 0; flex: 1 1 100%; }
   .nav { flex-direction: row; flex-wrap: wrap; }
   .nav a[aria-current='page']::before { display: none; }
-  .side-foot { margin: 0 0 0 auto; }
+  .side-foot { margin: 0 0 0 auto; flex-direction: row; flex-wrap: wrap; justify-content: flex-end; }
+  .side-foot .btn { padding: 8px 12px; }   /* Sign out stays reachable on phones */
   .pane-main { padding: 20px 16px 32px; }
   .pane-detail { padding: 20px 16px; }
 }
