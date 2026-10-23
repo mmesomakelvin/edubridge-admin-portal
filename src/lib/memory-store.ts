@@ -58,6 +58,9 @@ export function createMemoryStore(initial?: Content): MemoryStore {
     async writeFeed(feed) {
       files.set(FEED_PATH, structuredClone(feed))
     },
+    ownsImageUrl(url) {
+      return /^data:image\/(webp|jpeg|png);base64,/.test(url)
+    },
     async putImage(pathname, body, contentType) {
       files.set(pathname, Buffer.from(body))
       return `data:${contentType};base64,${Buffer.from(body).toString('base64')}`

@@ -102,6 +102,12 @@ describe('memory store', () => {
     expect((await store.readBackup(backups[1]!.pathname)).version).toBe(1)
   })
 
+  it('owns only the data-URL images it hands out', () => {
+    const store = createMemoryStore()
+    expect(store.ownsImageUrl('data:image/webp;base64,YWJj')).toBe(true)
+    expect(store.ownsImageUrl('https://abc.public.blob.vercel-storage.com/images/x.webp')).toBe(false)
+  })
+
   it('returns a data URL for images', async () => {
     const url = await createMemoryStore().putImage('images/x.webp', Buffer.from('abc'), 'image/webp')
     expect(url).toBe('data:image/webp;base64,YWJj')

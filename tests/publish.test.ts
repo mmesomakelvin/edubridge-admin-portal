@@ -59,6 +59,21 @@ describe('publishProgram', () => {
     expect(await store.listBackups()).toEqual([])
   })
 
+  it('rejects a new landing image that is not from this store', async () => {
+    const store = createMemoryStore(content())
+    const draft = program({ landingImageUrl: 'https://otherstore0000000.public.blob.vercel-storage.com/images/x.webp' })
+    const result = await publishProgram(store, { slug, draft, baseVersion: 1, by, now: NOW })
+    expect(result).toEqual({ ok: false, reason: 'invalid', issues: [{ path: 'landingImageUrl', level: 'error', message: 'Upload the image here instead of pasting a link' }] })
+    expect(await store.listBackups()).toEqual([])
+  })
+
+  it('accepts a landing image the store handed out', async () => {
+    const store = createMemoryStore(content())
+    const url = await store.putImage('images/school-of-finance-0123456789abcdef.webp', Buffer.from('img'), 'image/webp')
+    const result = await publishProgram(store, { slug, draft: program({ landingImageUrl: url }), baseVersion: 1, by, now: NOW })
+    expect(result).toMatchObject({ ok: true, version: 2 })
+  })
+
   it('rejects invalid edits without writing anything', async () => {
     const store = createMemoryStore(content())
     const bad = program({ cohorts: [cohort({ endDate: '2027-01-01' })] })

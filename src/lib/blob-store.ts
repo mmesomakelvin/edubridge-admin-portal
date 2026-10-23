@@ -8,6 +8,7 @@ import {
   CONTENT_PATH,
   ConflictError,
   FEED_PATH,
+  IMAGE_PREFIX,
   NotSeededError,
   VERSIONS_PREFIX,
   backupInfoFromPathname,
@@ -45,6 +46,8 @@ const isAlreadyExists = (error: unknown) => error instanceof BlobError && /alrea
 export function createBlobStore(token = process.env.BLOB_READ_WRITE_TOKEN): ContentStore {
   if (!token) throw new Error('BLOB_READ_WRITE_TOKEN is not set')
   const base = { access: 'public' as const, token, addRandomSuffix: false }
+  // Read-write tokens look like vercel_blob_rw_<storeId>_<secret>; public URLs are https://<storeid>.public.blob.vercel-storage.com.
+  const storeHost = `${(token.split('_')[3] ?? '').toLowerCase()}.public.blob.vercel-storage.com`
 
   async function readJson(pathname: string): Promise<{ json: unknown; etag: string } | null> {
     const result = await get(pathname, { access: 'public', token, useCache: false })
@@ -174,6 +177,14 @@ export function createBlobStore(token = process.env.BLOB_READ_WRITE_TOKEN): Cont
     },
     async writeFeed(feed: CohortsFeed) {
       await putJson(FEED_PATH, feed, { allowOverwrite: true, cacheControlMaxAge: CONTENT_MAX_AGE_SECONDS })
+    },
+    ownsImageUrl(url: string) {
+      try {
+        const parsed = new URL(url)
+        return parsed.protocol === 'https:' && parsed.hostname === storeHost && parsed.pathname.startsWith(`/${IMAGE_PREFIX}`)
+      } catch {
+        return false
+      }
     },
     async putImage(pathname: string, body: Buffer, contentType: string) {
       // Hashed names mean identical bytes map to the same object, so overwrite is harmless.

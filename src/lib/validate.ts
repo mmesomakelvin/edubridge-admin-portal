@@ -20,8 +20,9 @@ const BLOB_HOST = /^[a-z0-9-]+\.public\.blob\.vercel-storage\.com$/i
 const DATA_IMAGE = /^data:image\/(webp|jpeg|png);base64,[a-z0-9+/=]+$/i
 
 /**
- * Only images from our own Blob store (or demo-mode data images) may be published.
- * Blocks javascript:, plain http, look-alike hosts and non-image data URLs (XSS defence).
+ * Shape check for image URLs: a Blob store URL or a raster data image. Blocks javascript:, plain http,
+ * look-alike hosts and non-image data URLs (XSS defence). That the image is from *this* store is
+ * enforced at publish time by ContentStore.ownsImageUrl.
  */
 export function isSafeImageUrl(url: string): boolean {
   if (DATA_IMAGE.test(url)) return true

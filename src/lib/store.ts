@@ -56,6 +56,8 @@ export interface ContentStore {
   readBackup(pathname: string): Promise<Content>
   writeFeed(feed: CohortsFeed): Promise<void>
   putImage(pathname: string, body: Buffer, contentType: string): Promise<string>
+  /** True only for image URLs this store hands out from putImage; a newly published image must be one. */
+  ownsImageUrl(url: string): boolean
 }
 
 const pad6 = (n: number) => String(n).padStart(6, '0')

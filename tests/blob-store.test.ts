@@ -151,6 +151,24 @@ describe('blob store', () => {
     })
   })
 
+  // Found in the final review: the image check accepted any tenant's Blob host (and data: images) in
+  // production. A new landing image must come from this store's own images/ folder.
+  describe('ownsImageUrl', () => {
+    const own = createBlobStore('vercel_blob_rw_AbCd1234EfGh5678_secretpart')
+    it('accepts images in this store', () => {
+      expect(own.ownsImageUrl('https://abcd1234efgh5678.public.blob.vercel-storage.com/images/data-school-0123456789abcdef.webp')).toBe(true)
+    })
+    it.each([
+      'https://otherstore0000000.public.blob.vercel-storage.com/images/x.webp',
+      'https://abcd1234efgh5678.public.blob.vercel-storage.com/content.json',
+      'http://abcd1234efgh5678.public.blob.vercel-storage.com/images/x.webp',
+      'data:image/webp;base64,UklGRg==',
+      'not a url',
+    ])('rejects %s', (u) => {
+      expect(own.ownsImageUrl(u)).toBe(false)
+    })
+  })
+
   describe('createContent', () => {
     it('creates content.json (never overwriting) and then its version file', async () => {
       await store().createContent(content())
