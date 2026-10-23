@@ -31,7 +31,9 @@ export function createBlobStore(token = process.env.BLOB_READ_WRITE_TOKEN): Cont
     const result = await get(pathname, { access: 'public', token, useCache: false })
     if (!result) return null
     const text = await new Response(result.stream).text()
-    return { json: JSON.parse(text), etag: result.blob.etag }
+    // Blob compresses larger files when serving them and marks the etag weak (W/"…"); put({ ifMatch })
+    // only accepts the strong form of the same tag, so drop the prefix or every publish looks like a conflict.
+    return { json: JSON.parse(text), etag: result.blob.etag.replace(/^W\//, '') }
   }
 
   function putJson(pathname: string, data: unknown, options: { allowOverwrite: boolean; cacheControlMaxAge: number; ifMatch?: string }) {
