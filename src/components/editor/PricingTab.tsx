@@ -55,8 +55,9 @@ export function PricingTab({ draft, issues, dispatch }: { draft: ProgramContent;
             </div>
             <label className="field">
               <span>Description</span>
-              <textarea className="inp" rows={2} value={option.description}
+              <textarea className="inp" rows={2} value={option.description} aria-invalid={isInvalid(issues, at('description'))}
                 onChange={(e) => dispatch({ type: 'pricing/text', index, field: 'description', value: e.target.value })} />
+              <FieldError issues={issues} path={at('description')} />
             </label>
           </fieldset>
         )
