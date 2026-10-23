@@ -48,6 +48,7 @@ export interface BackupOptions {
 export interface ContentStore {
   readContent(): Promise<{ content: Content; etag: string }>
   createContent(content: Content): Promise<void>
+  /** Throws only when the content did not land: ConflictError if refused, otherwise the underlying error. */
   writeContent(content: Content, ifMatch: string): Promise<void>
   writeBackup(content: Content, savedAt: Date, opts?: BackupOptions): Promise<BackupInfo>
   deleteBackup(pathname: string): Promise<void>

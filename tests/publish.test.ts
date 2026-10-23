@@ -48,6 +48,17 @@ describe('publishProgram', () => {
     expect(await store.listBackups()).toEqual([])
   })
 
+  // Found in the final review: only a conflict cleaned up, so any other failure (e.g. Blob down) left a
+  // backup that history showed as a publish that never happened.
+  it('leaves no backup behind when the write fails for any other reason', async () => {
+    const store = createMemoryStore(content())
+    store.writeContent = async () => {
+      throw new Error('Blob is unavailable')
+    }
+    await expect(publishProgram(store, { slug, draft: edited(), baseVersion: 1, by, now: NOW })).rejects.toThrow('Blob is unavailable')
+    expect(await store.listBackups()).toEqual([])
+  })
+
   it('rejects invalid edits without writing anything', async () => {
     const store = createMemoryStore(content())
     const bad = program({ cohorts: [cohort({ endDate: '2027-01-01' })] })

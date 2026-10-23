@@ -38,7 +38,7 @@ export function Sidebar({ email, recent }: { email: string; recent: RecentPublis
           <h2 className="side-label">Recent publishes</h2>
           <ul>
             {recent.map((r) => (
-              <li key={r.version}>
+              <li key={`${r.version}-${r.at}`}>
                 <span className="dot">v{r.version}</span>
                 <span>
                   <b>{r.restoredFrom === undefined ? 'Published' : `Rolled back to v${r.restoredFrom}`}</b>

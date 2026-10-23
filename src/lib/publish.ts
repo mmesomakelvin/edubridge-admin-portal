@@ -29,7 +29,8 @@ export type RollbackResult =
 
 /**
  * Write content (etag-guarded), then the derived feed. A failed feed write never undoes a publish.
- * A refused write removes the backup saved for it, so history never shows a publish that didn't happen.
+ * writeContent only throws when the content did not land (blob-store checks before reporting), so any
+ * failure removes the backup saved for it and history never shows a publish that didn't happen.
  */
 async function commit(
   store: ContentStore,
@@ -40,11 +41,11 @@ async function commit(
   try {
     await store.writeContent(next, etag)
   } catch (error) {
-    if (!(error instanceof ConflictError)) throw error
     await store.deleteBackup(backup.pathname).catch((cleanupError: unknown) => {
-      console.error(`could not remove ${backup.pathname} after a refused write`, cleanupError)
+      console.error(`could not remove ${backup.pathname} after a failed write`, cleanupError)
     })
-    return { ok: false }
+    if (error instanceof ConflictError) return { ok: false }
+    throw error
   }
   try {
     await store.writeFeed(buildCohortsFeed(next))
