@@ -3,6 +3,7 @@ import { auth } from '@/auth'
 import { isAllowedEmail, parseAllowlist } from '@/lib/allowlist'
 import { buildCsp, createNonce } from '@/lib/csp'
 import { isDemoMode } from '@/lib/demo'
+import { needsLoginRedirect } from '@/lib/gate'
 
 /** Next.js reads the nonce from the request's CSP header and stamps it on its own scripts. */
 function withCsp(req: NextRequest) {
@@ -16,11 +17,11 @@ function withCsp(req: NextRequest) {
   return response
 }
 
-// Every page and API route except sign-in itself requires the allowlisted session.
-// Pages and server actions re-check with requireAdmin(); this is the first gate, not the only one.
+// Every page except sign-in itself requires the allowlisted session. Server actions and API routes
+// check it themselves (see needsLoginRedirect); this is the first gate, not the only one.
 export const proxy = auth((req) => {
-  const isLogin = req.nextUrl.pathname === '/login'
-  if (!isLogin && !isDemoMode() && !isAllowedEmail(req.auth?.user?.email, parseAllowlist(process.env.ALLOWED_EMAILS))) {
+  const allowed = isDemoMode() || isAllowedEmail(req.auth?.user?.email, parseAllowlist(process.env.ALLOWED_EMAILS))
+  if (needsLoginRedirect({ pathname: req.nextUrl.pathname, isServerAction: req.headers.has('next-action'), allowed })) {
     return Response.redirect(new URL('/login', req.nextUrl.origin))
   }
   return withCsp(req)

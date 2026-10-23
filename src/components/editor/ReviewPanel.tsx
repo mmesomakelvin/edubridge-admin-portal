@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { publishProgramAction } from '@/app/actions'
 import type { ProgramContent } from '@/lib/content-schema'
 import type { ProgramInfo } from '@/lib/programs'
+import { liveServerIssues, type ServerIssues } from '@/lib/review-state'
 import { issueLabel, type Issue } from '@/lib/validate'
 
 type Problem = { kind: 'conflict' } | { kind: 'unauthorized' } | { kind: 'error'; message: string }
@@ -23,7 +24,8 @@ export function ReviewPanel({ info, draft, issues, changes, baseVersion, onDisca
   const dialogRef = useRef<HTMLDialogElement>(null)
   const [pending, startTransition] = useTransition()
   const [problem, setProblem] = useState<Problem | null>(null)
-  const [serverIssues, setServerIssues] = useState<Issue[]>([])
+  const [server, setServer] = useState<ServerIssues | null>(null)
+  const serverIssues = liveServerIssues(server, draft)
 
   const errors = [...issues.filter((i) => i.level === 'error'), ...serverIssues]
   const warnings = issues.filter((i) => i.level === 'warning')
@@ -38,7 +40,7 @@ export function ReviewPanel({ info, draft, issues, changes, baseVersion, onDisca
           router.replace(`/programs/${info.slug}?published=${result.version}${result.feedUpdated ? '' : '&feed=0'}`)
           return
         }
-        if (result.reason === 'invalid') setServerIssues(result.issues)
+        if (result.reason === 'invalid') setServer({ draft, issues: result.issues })
         else if (result.reason === 'conflict') setProblem({ kind: 'conflict' })
         else if (result.reason === 'unauthorized') setProblem({ kind: 'unauthorized' })
         else setProblem({ kind: 'error', message: 'This program could not be found.' })
@@ -109,7 +111,7 @@ export function ReviewPanel({ info, draft, issues, changes, baseVersion, onDisca
 
       <div className="actions">
         <button type="button" className="btn btn-danger" disabled={changes.length === 0 || pending}
-          onClick={() => { onDiscard(); setServerIssues([]); setProblem(null) }}>
+          onClick={() => { onDiscard(); setProblem(null) }}>
           Discard
         </button>
         <button type="button" className="btn btn-primary" disabled={!canPublish} onClick={() => dialogRef.current?.showModal()}>

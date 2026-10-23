@@ -4,26 +4,24 @@ import { useRef, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { RotateCcw } from 'lucide-react'
 import { rollbackAction } from '@/app/actions'
+import { rollbackMessage } from '@/lib/rollback-message'
 
 export function RollbackButton({ baseVersion, previousVersion }: { baseVersion: number; previousVersion: number | null }) {
   const router = useRouter()
   const dialogRef = useRef<HTMLDialogElement>(null)
   const [pending, startTransition] = useTransition()
-  const [message, setMessage] = useState<{ tone: 'ok' | 'warn'; text: string } | null>(null)
+  const [message, setMessage] = useState<{ tone: 'ok' | 'warn' | 'error'; text: string } | null>(null)
 
   function rollBack() {
     startTransition(async () => {
-      const result = await rollbackAction(baseVersion)
-      dialogRef.current?.close()
-      if (result.ok) {
-        setMessage({ tone: 'ok', text: `Rolled back. Version ${result.restoredFrom}'s content is live again as version ${result.version}.` })
-        router.refresh()
-      } else if (result.reason === 'conflict') {
-        setMessage({ tone: 'warn', text: 'Someone published since this page loaded. Reload and try again.' })
-      } else if (result.reason === 'no-backup') {
-        setMessage({ tone: 'warn', text: 'There is no earlier version to roll back to.' })
-      } else {
-        setMessage({ tone: 'warn', text: 'Your session has ended. Sign in again.' })
+      try {
+        const result = await rollbackAction(baseVersion)
+        setMessage(rollbackMessage(result))
+        if (result.ok) router.refresh()
+      } catch {
+        setMessage({ tone: 'error', text: 'Rolling back failed. Nothing was changed. Check your connection and try again.' })
+      } finally {
+        dialogRef.current?.close()
       }
     })
   }
