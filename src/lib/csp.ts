@@ -30,3 +30,17 @@ export const SECURITY_HEADERS: { key: string; value: string }[] = [
   { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
   { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains' },
 ]
+
+/**
+ * Fixed CSP for Auth.js's built-in pages (/api/auth/signout, /api/auth/error, …). They are outside the
+ * proxy, so they get no nonce; they also run no script, so script is forbidden outright.
+ */
+export const AUTH_PAGES_CSP = [
+  "default-src 'none'",
+  "script-src 'none'",
+  "style-src 'unsafe-inline'",
+  "img-src 'self' data: https:",
+  "form-action 'self' https://accounts.google.com",
+  "frame-ancestors 'none'",
+  "base-uri 'none'",
+].join('; ')

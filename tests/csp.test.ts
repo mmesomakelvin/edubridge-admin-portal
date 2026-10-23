@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { SECURITY_HEADERS, buildCsp, createNonce } from '@/lib/csp'
+import { AUTH_PAGES_CSP, SECURITY_HEADERS, buildCsp, createNonce } from '@/lib/csp'
 
 const directive = (csp: string, name: string) => csp.split('; ').find((d) => d.startsWith(`${name} `)) ?? ''
 
@@ -42,5 +42,18 @@ describe('SECURITY_HEADERS', () => {
     expect(keys).toEqual(
       expect.arrayContaining(['X-Content-Type-Options', 'Referrer-Policy', 'X-Frame-Options', 'Permissions-Policy', 'Strict-Transport-Security']),
     )
+  })
+})
+
+// Found in the final review: Auth.js's own pages (/api/auth/signout, /error) sit outside the proxy, so
+// they had no CSP. They need no script at all, so a fixed policy can forbid it outright.
+describe('AUTH_PAGES_CSP', () => {
+  it('forbids all script on the Auth.js pages', () => {
+    expect(directive(AUTH_PAGES_CSP, 'script-src')).toBe("script-src 'none'")
+    expect(AUTH_PAGES_CSP).toContain("default-src 'none'")
+  })
+  it('still lets their forms reach us and Google, and blocks framing', () => {
+    expect(directive(AUTH_PAGES_CSP, 'form-action')).toBe("form-action 'self' https://accounts.google.com")
+    expect(AUTH_PAGES_CSP).toContain("frame-ancestors 'none'")
   })
 })
