@@ -2,8 +2,8 @@
 
 Internal admin portal that lets trusted EduBridge staff change **program dates**,
 **pricing**, and **landing/placeholder images** for every course — without a developer
-or a redeploy. Changes appear on the public site (`www.edubridgeacademy.com`) within
-seconds of publishing.
+or a redeploy. Once the public site (`www.edubridgeacademy.com`) reads the content store
+(a separate follow-up in the public repo), published changes appear there within about a minute.
 
 This is a **new, separate project** from the public marketing site. It lives on its own
 URL (`admin.edubridgeacademy.com`) with its own deployment, secrets, and login.
@@ -13,14 +13,15 @@ URL (`admin.edubridgeacademy.com`) with its own deployment, secrets, and login.
 
 ---
 
-## Start here (new Claude Code session)
+## Start here
 
-1. **Read the spec:** [`docs/SPEC.md`](docs/SPEC.md) — the full approved design
-   (architecture, content model, screens, auth, rollout, testing).
-2. **See the intended look:** open [`design/mockup.html`](design/mockup.html) in a browser
-   — the light "command console" direction (sidebar, dashboard, program editor).
-3. **Then plan:** turn the spec into an implementation plan before writing code
-   (e.g. the Superpowers `writing-plans` skill), and get it approved.
+1. **The design:** [`docs/SPEC.md`](docs/SPEC.md) — architecture, content model, screens, auth,
+   rollout and testing. The original look is in [`design/mockup.html`](design/mockup.html).
+2. **How it was built:** [`docs/superpowers/plans/2026-10-14-admin-portal.md`](docs/superpowers/plans/2026-10-14-admin-portal.md)
+   — the task-by-task plan (Tasks 1–18).
+3. **Next up after go-live:** the Analytics page design,
+   [`docs/superpowers/specs/2026-10-23-analytics-design.md`](docs/superpowers/specs/2026-10-23-analytics-design.md).
+4. **To run it locally:** see *Local development* below.
 
 ## Local development
 

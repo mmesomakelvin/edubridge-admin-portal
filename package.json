@@ -27,7 +27,7 @@
     "url": "https://github.com/mmesomakelvin/edubridge-admin-portal/issues"
   },
   "homepage": "https://github.com/mmesomakelvin/edubridge-admin-portal#readme",
-  "private": "true",
+  "private": true,
   "engines": {
     "node": ">=20.9"
   },
