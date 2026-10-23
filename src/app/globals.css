@@ -323,3 +323,13 @@ dialog.confirm .actions { margin-top: 18px; }
 .history-empty { margin-top: 12px; }
 .list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }   /* history list; the programs list became a table in 12b */
 .hist-main { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; min-width: 0; }
+
+/* image upload progress */
+.dropzone.is-busy { cursor: progress; border-color: var(--green); background: var(--open-bg); color: var(--green-deep); }
+.upload-bar { display: block; position: relative; width: min(320px, 100%); height: 8px; margin-top: 4px; border-radius: 999px; background: var(--raise); overflow: hidden; }
+.upload-bar > span { display: block; height: 100%; border-radius: 999px; background: var(--accent); transition: width .2s ease-out; }
+.upload-bar.is-indeterminate > span { position: absolute; width: 35%; animation: upload-slide 1.2s ease-in-out infinite; }
+@keyframes upload-slide { from { left: -35%; } to { left: 100%; } }
+@media (prefers-reduced-motion: reduce) {
+  .upload-bar.is-indeterminate > span { animation: none; left: 0; width: 100%; opacity: .55; }
+}
