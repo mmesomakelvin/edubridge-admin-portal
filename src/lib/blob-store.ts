@@ -12,6 +12,7 @@ import {
   backupPathname,
   sortBackups,
   type BackupInfo,
+  type BackupOptions,
   type ContentStore,
 } from './store'
 
@@ -54,10 +55,10 @@ export function createBlobStore(token = process.env.BLOB_READ_WRITE_TOKEN): Cont
         throw error
       }
     },
-    async writeBackup(content: Content, savedAt: Date): Promise<BackupInfo> {
-      const pathname = backupPathname(content.version, savedAt)
+    async writeBackup(content: Content, savedAt: Date, opts?: BackupOptions): Promise<BackupInfo> {
+      const pathname = backupPathname(content.version, savedAt, opts)
       await putJson(pathname, content, { allowOverwrite: false, cacheControlMaxAge: ONE_YEAR })
-      return { pathname, version: content.version, savedAt: savedAt.toISOString() }
+      return backupInfoFromPathname(pathname)!
     },
     async listBackups() {
       const infos: BackupInfo[] = []

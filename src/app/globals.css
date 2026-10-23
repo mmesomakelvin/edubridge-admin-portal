@@ -322,3 +322,4 @@ dialog.confirm .actions { margin-top: 18px; }
 .hist-row b { font-weight: 600; }
 .history-empty { margin-top: 12px; }
 .list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }   /* history list; the programs list became a table in 12b */
+.hist-main { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; min-width: 0; }

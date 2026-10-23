@@ -25,10 +25,18 @@ export interface BackupInfo {
   pathname: string
   version: number
   savedAt: string
+  /** Set when the version that replaced this one was a rollback restoring this version number. */
+  replacedByRollbackTo?: number
 }
 export interface RecentPublish {
   version: number
   at: string
+  /** Set when this version was a rollback: the version whose content it restored. */
+  restoredFrom?: number
+}
+export interface BackupOptions {
+  /** The backup is being saved because a rollback to this version is replacing it. */
+  rollbackTo?: number
 }
 
 /** Everything the portal needs from storage. Blob in real use; memory in tests and demo mode. */
@@ -36,24 +44,30 @@ export interface ContentStore {
   readContent(): Promise<{ content: Content; etag: string }>
   createContent(content: Content): Promise<void>
   writeContent(content: Content, ifMatch: string): Promise<void>
-  writeBackup(content: Content, savedAt: Date): Promise<BackupInfo>
+  writeBackup(content: Content, savedAt: Date, opts?: BackupOptions): Promise<BackupInfo>
   listBackups(): Promise<BackupInfo[]>
   readBackup(pathname: string): Promise<Content>
   writeFeed(feed: CohortsFeed): Promise<void>
   putImage(pathname: string, body: Buffer, contentType: string): Promise<string>
 }
 
-export function backupPathname(version: number, savedAt: Date): string {
+const pad6 = (n: number) => String(n).padStart(6, '0')
+
+/** The rollback marker lives in the pathname so history can be shown without reading every backup. */
+export function backupPathname(version: number, savedAt: Date, opts: BackupOptions = {}): string {
   const stamp = savedAt.toISOString().replace(/[:.]/g, '-')
-  return `${BACKUP_PREFIX}content-v${String(version).padStart(6, '0')}-${stamp}.json`
+  const marker = opts.rollbackTo === undefined ? '' : `-rollback-v${pad6(opts.rollbackTo)}`
+  return `${BACKUP_PREFIX}content-v${pad6(version)}-${stamp}${marker}.json`
 }
 
-const BACKUP_RE = /^backups\/content-v(\d{6})-(\d{4}-\d{2}-\d{2})T(\d{2})-(\d{2})-(\d{2})-(\d{3})Z\.json$/
+const BACKUP_RE = /^backups\/content-v(\d{6})-(\d{4}-\d{2}-\d{2})T(\d{2})-(\d{2})-(\d{2})-(\d{3})Z(?:-rollback-v(\d{6}))?\.json$/
 
 export function backupInfoFromPathname(pathname: string): BackupInfo | null {
   const m = BACKUP_RE.exec(pathname)
   if (!m) return null
-  return { pathname, version: Number(m[1]), savedAt: `${m[2]}T${m[3]}:${m[4]}:${m[5]}.${m[6]}Z` }
+  const info: BackupInfo = { pathname, version: Number(m[1]), savedAt: `${m[2]}T${m[3]}:${m[4]}:${m[5]}.${m[6]}Z` }
+  if (m[7]) info.replacedByRollbackTo = Number(m[7])
+  return info
 }
 
 export function sortBackups(list: BackupInfo[]): BackupInfo[] {
@@ -64,5 +78,5 @@ export function sortBackups(list: BackupInfo[]): BackupInfo[] {
 export function recentPublishes(backups: BackupInfo[], n = 3): RecentPublish[] {
   return sortBackups(backups)
     .slice(0, n)
-    .map((b) => ({ version: b.version + 1, at: b.savedAt }))
+    .map((b) => ({ version: b.version + 1, at: b.savedAt, ...(b.replacedByRollbackTo === undefined ? {} : { restoredFrom: b.replacedByRollbackTo }) }))
 }

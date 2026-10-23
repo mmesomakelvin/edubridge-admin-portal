@@ -9,6 +9,11 @@ describe('backup pathnames', () => {
     expect(pathname).toBe('backups/content-v000012-2026-10-14T12-30-05-123Z.json')
     expect(backupInfoFromPathname(pathname)).toEqual({ pathname, version: 12, savedAt: '2026-10-14T12:30:05.123Z' })
   })
+  it('records when the version was replaced by a rollback, and to which version', () => {
+    const pathname = backupPathname(12, new Date('2026-10-14T12:30:05.123Z'), { rollbackTo: 9 })
+    expect(pathname).toBe('backups/content-v000012-2026-10-14T12-30-05-123Z-rollback-v000009.json')
+    expect(backupInfoFromPathname(pathname)).toEqual({ pathname, version: 12, savedAt: '2026-10-14T12:30:05.123Z', replacedByRollbackTo: 9 })
+  })
   it('ignores unrelated files', () => {
     expect(backupInfoFromPathname('backups/notes.txt')).toBeNull()
   })
@@ -23,6 +28,16 @@ describe('recentPublishes', () => {
     ]
     expect(recentPublishes(backups, 2)).toEqual([
       { version: 4, at: '2026-10-14T12:00:00.000Z' },
+      { version: 3, at: '2026-10-13T12:00:00.000Z' },
+    ])
+  })
+  it('labels a version that was a rollback with the version it restored', () => {
+    const backups = [
+      { pathname: 'b', version: 3, savedAt: '2026-10-14T12:00:00.000Z', replacedByRollbackTo: 2 },
+      { pathname: 'a', version: 2, savedAt: '2026-10-13T12:00:00.000Z' },
+    ]
+    expect(recentPublishes(backups)).toEqual([
+      { version: 4, at: '2026-10-14T12:00:00.000Z', restoredFrom: 2 },
       { version: 3, at: '2026-10-13T12:00:00.000Z' },
     ])
   })

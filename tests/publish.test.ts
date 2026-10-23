@@ -112,6 +112,15 @@ describe('rollbackLastPublish', () => {
     expect((await store.listBackups()).map((b) => b.version)).toEqual([2, 1])
   })
 
+  it('marks the backup it saves as replaced by a rollback, so history can say so', async () => {
+    const store = createMemoryStore(content())
+    await publishProgram(store, { slug, draft: edited(), baseVersion: 1, by, now: NOW })
+    await rollbackLastPublish(store, { baseVersion: 2, by, now: new Date('2026-10-14T13:00:00Z') })
+    const [replacedByRollback, replacedByPublish] = await store.listBackups()
+    expect(replacedByRollback).toMatchObject({ version: 2, replacedByRollbackTo: 1 })
+    expect(replacedByPublish?.replacedByRollbackTo).toBeUndefined()
+  })
+
   it('reports when there is nothing to roll back to', async () => {
     const store = createMemoryStore(content())
     expect(await rollbackLastPublish(store, { baseVersion: 1, by, now: NOW })).toEqual({ ok: false, reason: 'no-backup' })

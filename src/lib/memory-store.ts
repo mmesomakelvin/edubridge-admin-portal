@@ -33,10 +33,10 @@ export function createMemoryStore(initial?: Content): MemoryStore {
       if (!current || current.etag !== ifMatch) throw new ConflictError()
       current = { value: structuredClone(content), etag: nextEtag() }
     },
-    async writeBackup(content, savedAt) {
-      const pathname = backupPathname(content.version, savedAt)
+    async writeBackup(content, savedAt, opts) {
+      const pathname = backupPathname(content.version, savedAt, opts)
       files.set(pathname, structuredClone(content))
-      return { pathname, version: content.version, savedAt: savedAt.toISOString() }
+      return backupInfoFromPathname(pathname)!
     },
     async listBackups() {
       const infos = [...files.keys()].map(backupInfoFromPathname).filter((b): b is BackupInfo => b !== null)

@@ -84,7 +84,7 @@ export async function rollbackLastPublish(store: ContentStore, input: RollbackIn
   if (!target) return { ok: false, reason: 'no-backup' }
   const restored = await store.readBackup(target.pathname)
 
-  await store.writeBackup(content, now)
+  await store.writeBackup(content, now, { rollbackTo: target.version })
   const next: Content = { ...restored, version: content.version + 1, updatedAt: now.toISOString(), updatedBy: input.by }
   const result = await commit(store, next, etag)
   return result.ok

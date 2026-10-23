@@ -41,7 +41,7 @@ export function Sidebar({ email, recent }: { email: string; recent: RecentPublis
               <li key={r.version}>
                 <span className="dot">v{r.version}</span>
                 <span>
-                  <b>Published</b>
+                  <b>{r.restoredFrom === undefined ? 'Published' : `Rolled back to v${r.restoredFrom}`}</b>
                   <span>{formatStamp(r.at)}</span>
                 </span>
               </li>
