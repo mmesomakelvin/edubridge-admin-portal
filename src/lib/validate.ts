@@ -41,6 +41,8 @@ export function validateProgram(p: ProgramContent, opts: ValidateOptions = {}): 
     if (value.length > max) error(path, `Keep this under ${max} characters`)
   }
   const today = todayIso(opts.now)
+  // Same calendar day two years on: a later start is far more likely a typo'd year than a real plan.
+  const twoYearsOut = `${Number(today.slice(0, 4)) + 2}${today.slice(4)}`
   const originalStarts = new Map(opts.original?.cohorts.map((c) => [c.id, c.startDate]) ?? [])
   const seenIds = new Set<string>()
 
@@ -56,8 +58,12 @@ export function validateProgram(p: ProgramContent, opts: ValidateOptions = {}): 
     if (!startOk) error(at('startDate'), 'Pick a valid start date')
     if (!endOk) error(at('endDate'), 'Pick a valid end date')
     if (startOk && endOk && c.startDate >= c.endDate) error(at('endDate'), 'End date must be after the start date')
-    if (startOk && c.startDate < today && originalStarts.get(c.id) !== c.startDate) {
+    const newlyEntered = originalStarts.get(c.id) !== c.startDate
+    if (startOk && c.startDate < today && newlyEntered) {
       warn(at('startDate'), 'This start date is in the past, so the cohort will show as Full or Ended')
+    }
+    if (startOk && c.startDate > twoYearsOut && newlyEntered) {
+      warn(at('startDate'), 'This start date is more than two years away. Check the year')
     }
 
     const totalOk = Number.isInteger(c.totalSeats) && c.totalSeats >= 1

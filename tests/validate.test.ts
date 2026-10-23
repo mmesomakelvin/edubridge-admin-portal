@@ -106,6 +106,21 @@ describe('validateProgram', () => {
     expect(hasErrors(issues)).toBe(false)
   })
 
+  // Found in the final review: a typo'd year (2062 for 2026) would publish silently and show as Open.
+  it('warns about, but allows, a newly entered start date more than two years away', () => {
+    const p = withCohort({ id: 'new-1', startDate: '2062-01-17', endDate: '2062-03-22' })
+    const issues = validateProgram(p, { now: NOW, original: program() })
+    expect(issues).toEqual([
+      { path: 'cohorts.0.startDate', level: 'warning', message: 'This start date is more than two years away. Check the year' },
+    ])
+    expect(hasErrors(issues)).toBe(false)
+  })
+
+  it('does not warn about a start date within two years', () => {
+    const p = withCohort({ id: 'new-1', startDate: '2028-10-14', endDate: '2028-12-01' })
+    expect(validateProgram(p, { now: NOW, original: program() })).toEqual([])
+  })
+
   it('does not warn about historical cohorts nobody touched', () => {
     const past = withCohort({ id: 'cohort-2026-q1', startDate: '2026-01-10', endDate: '2026-02-28', seatsRemaining: 0 })
     expect(validateProgram(past, { now: NOW, original: past })).toEqual([])
