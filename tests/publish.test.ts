@@ -91,7 +91,7 @@ describe('publishProgram', () => {
     expect((await store.readContent()).content.version).toBe(2)
   })
 
-  it('rejects programs outside the six', async () => {
+  it('rejects programs outside the seven', async () => {
     const store = createMemoryStore(content())
     expect(await publishProgram(store, { slug: 'corporate-training', draft: edited(), baseVersion: 1, by, now: NOW })).toEqual({
       ok: false,

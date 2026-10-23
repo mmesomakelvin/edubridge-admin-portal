@@ -4,7 +4,7 @@ import { PROGRAMS, getProgram, isProgramSlug, liveUrl } from '@/lib/programs'
 import { cohort, content, program } from './fixtures'
 
 describe('program registry', () => {
-  it('covers exactly the six learner programs, keyed by folder slug', () => {
+  it('covers exactly the seven learner programs, keyed by folder slug', () => {
     expect(PROGRAMS.map((p) => p.slug)).toEqual([
       'school-of-finance',
       'data-school',
@@ -12,6 +12,7 @@ describe('program registry', () => {
       'advanced-financial-modeling',
       'school-of-hr-and-analytics',
       'project-finance-modeling',
+      'securities-trading',
     ])
   })
 
@@ -26,7 +27,7 @@ describe('program registry', () => {
   })
 
   it('maps each program to its homepage card', () => {
-    expect(PROGRAMS.map((p) => p.homeCardId)).toEqual(['prog-1', 'prog-2', 'prog-3', 'prog-4', 'prog-hr', 'prog-pfm'])
+    expect(PROGRAMS.map((p) => p.homeCardId)).toEqual(['prog-1', 'prog-2', 'prog-3', 'prog-4', 'prog-hr', 'prog-pfm', 'prog-securities-trading'])
   })
 })
 

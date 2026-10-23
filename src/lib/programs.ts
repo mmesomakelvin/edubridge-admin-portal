@@ -1,5 +1,5 @@
 /**
- * The six learner programs the portal manages. Keys are the public repo's
+ * The seven learner programs the portal manages (Securities Trading added 2026-10-20 on the public site). Keys are the public repo's
  * folder slugs (product/sections/<slug>/) — the same keys public/cohorts.json
  * and the win-back Google Sheet use. `href` is the real page path, which
  * differs for consulting. Corporate Training is deliberately absent.
@@ -11,6 +11,7 @@ export const PROGRAM_SLUGS = [
   'advanced-financial-modeling',
   'school-of-hr-and-analytics',
   'project-finance-modeling',
+  'securities-trading',
 ] as const
 
 export type ProgramSlug = (typeof PROGRAM_SLUGS)[number]
@@ -50,6 +51,12 @@ export const PROGRAMS: readonly ProgramInfo[] = [
     name: 'Project Finance Modeling',
     href: '/project-finance-modeling',
     homeCardId: 'prog-pfm',
+  },
+  {
+    slug: 'securities-trading',
+    name: 'Securities Trading Programme',
+    href: '/securities-trading',
+    homeCardId: 'prog-securities-trading',
   },
 ]
 

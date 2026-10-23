@@ -8,7 +8,7 @@ const ended = cohort({ id: 'ended', startDate: '2026-05-02', endDate: '2026-06-2
 const halfTyped = cohort({ id: 'half', startDate: '2027-02-', endDate: '2027-04-10', seatsRemaining: 9, totalSeats: 9 })
 
 describe('computeMetrics', () => {
-  it('counts open programs out of all six, with missing or dateless programs flagged', () => {
+  it('counts open programs out of all seven, with missing or dateless programs flagged', () => {
     const m = computeMetrics(
       content({
         programs: {
@@ -19,10 +19,10 @@ describe('computeMetrics', () => {
       }),
       NOW,
     )
-    expect(m.totalPrograms).toBe(6)
+    expect(m.totalPrograms).toBe(7)
     expect(m.openPrograms).toBe(1)
-    // data-school (only ended) + the three programs missing from the store; the full one is not "without dates"
-    expect(m.programsWithoutDates).toBe(4)
+    // data-school (only ended) + the four programs missing from the store; the full one is not "without dates"
+    expect(m.programsWithoutDates).toBe(5)
   })
 
   it('sums seats over every open cohort and ignores full, ended and half-typed ones', () => {
@@ -60,7 +60,7 @@ describe('computeMetrics', () => {
     expect(m.seatsTotal).toBe(0)
   })
 
-  it('ignores keys that are not one of the six programs', () => {
+  it('ignores keys that are not one of the seven programs', () => {
     const m = computeMetrics(content({ programs: { 'corporate-training': program() } }), NOW)
     expect(m.openPrograms).toBe(0)
     expect(m.seatsLeft).toBe(0)

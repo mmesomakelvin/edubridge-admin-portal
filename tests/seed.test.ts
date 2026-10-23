@@ -47,7 +47,7 @@ function fakeUploader() {
 }
 
 describe('buildSeed', () => {
-  it('builds version 1 with all six programs from the public repo', async () => {
+  it('builds version 1 with all seven programs from the public repo', async () => {
     const { upload } = fakeUploader()
     const seeded = await buildSeed(createFsSource(await makePublicRepo()), upload, NOW)
     expect(seeded).toMatchObject({ version: 1, updatedBy: 'seed', updatedAt: NOW.toISOString() })

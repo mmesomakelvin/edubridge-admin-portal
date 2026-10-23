@@ -44,7 +44,7 @@ for several seconds. `backups/` holds the version each publish replaced (used by
 
 ## What this portal does (scope)
 
-For each of the 6 learner programs (Corporate Training is out of scope):
+For each of the 7 learner programs (Corporate Training is out of scope; Securities Trading added 2026-10-23):
 
 - **Cohort dates & seats** — add/edit/remove cohorts; open/close; live Open/Full/Ended status.
 - **Pricing** — price labels, amounts, installment text, hero price label.

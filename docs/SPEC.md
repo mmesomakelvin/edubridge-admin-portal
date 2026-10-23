@@ -26,7 +26,8 @@ redeploy, no desynced automation.
 - Edit **pricing** (price labels, amounts, installment text, hero price label) per program.
 - Replace the **landing image** per program — the image on its homepage program card
   (program pages have no hero image today; `ProgramCard.tsx` is the only consumer).
-- Scope is the **6 learner programs only**. Corporate Training is excluded entirely (it has
+- Scope is the **7 learner programs only** (6 at approval; Securities Trading Programme added 2026-10-23 after it
+  launched on the public site 2026-10-20). Corporate Training is excluded entirely (it has
   no prices or cohorts in the site data; it stays in code).
 - A single shared, Google-locked login.
 - Keeping the win-back automation's cohort feed in sync.
@@ -133,7 +134,7 @@ seeded values against what the site renders today (expect zero visible change).
 **1. Login** — single "Sign in with Google" button, locked to `hello@edubridgeacademy.com`;
 any other account → "Not authorized."
 
-**2. Dashboard** — one row per program (the 6 learner programs): thumbnail · name ·
+**2. Dashboard** — one row per program (the 7 learner programs): thumbnail · name ·
 **next open cohort** (computed with the same `cohort-status` logic, ported verbatim) ·
 current price · **Edit**. Header: "Last published by hello@ · <time>" + "View live site ↗".
 
@@ -248,7 +249,8 @@ Each phase is shown locally / on a staging URL and approved before going live
 - **Visual direction:** light "command console" — white ground, left sidebar, EduBridge
   green accent used with restraint (see `design/mockup.html`).
 
-- **Corporate excluded** — portal covers the 6 learner programs only (2026-10-14).
+- **Corporate excluded** — portal covers the learner programs only (2026-10-14).
+- **Securities Trading added** — the public site gained a 7th learner program on 2026-10-20; the portal manages it too, so its dates, prices and win-back feed entries stay editable (2026-10-23).
 - **Keys = folder slugs** (match `cohorts.json` + win-back sheet) (2026-10-14).
 - **Next-cohort text is derived**, never edited (fixes issue #5 at the root) (2026-10-14).
 - **`content.json` TTL = 60 s** (2026-10-14).
