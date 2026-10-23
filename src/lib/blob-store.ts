@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto'
 import { BlobError, BlobNotFoundError, BlobPreconditionFailedError, del, get, head, list, put } from '@vercel/blob'
 import type { CohortsFeed } from './cohorts-feed'
 import { ContentSchema, type Content } from './content-schema'
@@ -26,6 +27,8 @@ const JSON_TYPE = 'application/json'
 // only accepts the strong form of the same tag.
 const strongEtag = (etag: string) => etag.replace(/^W\//, '')
 
+const toJson = (data: unknown) => JSON.stringify(data, null, 2)
+
 // The SDK has no dedicated class for "allowOverwrite: false and the pathname is taken".
 const isAlreadyExists = (error: unknown) => error instanceof BlobError && /already exists/i.test(error.message)
 
@@ -50,8 +53,24 @@ export function createBlobStore(token = process.env.BLOB_READ_WRITE_TOKEN): Cont
     return { json: JSON.parse(text), etag: strongEtag(result.blob.etag) }
   }
 
-  function putJson(pathname: string, data: unknown, options: { allowOverwrite: boolean; cacheControlMaxAge: number; ifMatch?: string }) {
-    return put(pathname, JSON.stringify(data, null, 2), { ...base, contentType: JSON_TYPE, ...options })
+  type PutOptions = { allowOverwrite: boolean; cacheControlMaxAge: number; ifMatch?: string }
+
+  function putJsonBody(pathname: string, body: string, options: PutOptions) {
+    return put(pathname, body, { ...base, contentType: JSON_TYPE, ...options })
+  }
+
+  function putJson(pathname: string, data: unknown, options: PutOptions) {
+    return putJsonBody(pathname, toJson(data), options)
+  }
+
+  /** True when the blob at `pathname` is exactly `body`: Blob's etag is the MD5 of the stored bytes. */
+  async function holds(pathname: string, body: string): Promise<boolean> {
+    try {
+      const { etag } = await head(pathname, { token })
+      return strongEtag(etag) === `"${createHash('md5').update(body).digest('hex')}"`
+    } catch {
+      return false
+    }
   }
 
   async function listAll(prefix: string): Promise<{ pathname: string; url: string }[]> {
@@ -97,27 +116,43 @@ export function createBlobStore(token = process.env.BLOB_READ_WRITE_TOKEN): Cont
       return { content: ContentSchema.parse(legacy.json), etag }
     },
     async createContent(content: Content) {
+      const body = toJson(content)
       // content.json first: it refuses to overwrite, so a second seed stops before touching anything.
-      await putJson(CONTENT_PATH, content, { allowOverwrite: false, cacheControlMaxAge: CONTENT_MAX_AGE_SECONDS })
-      await putJson(versionPathname(content.version), content, { allowOverwrite: false, cacheControlMaxAge: ONE_YEAR })
+      await putJsonBody(CONTENT_PATH, body, { allowOverwrite: false, cacheControlMaxAge: CONTENT_MAX_AGE_SECONDS }).catch(
+        async (error: unknown) => {
+          if (!(await holds(CONTENT_PATH, body))) throw error
+        },
+      )
+      await putJsonBody(versionPathname(content.version), body, { allowOverwrite: false, cacheControlMaxAge: ONE_YEAR }).catch(
+        async (error: unknown) => {
+          if (!(await holds(versionPathname(content.version), body))) throw error
+        },
+      )
     },
     async writeContent(content: Content, ifMatch: string) {
+      // The SDK retries failed requests, so an error can hide a write that landed. Each failure is
+      // therefore checked against what is actually stored before deciding what it means.
+      const body = toJson(content)
       const versionFile = versionPathname(content.version)
       try {
-        await putJson(versionFile, content, { allowOverwrite: false, cacheControlMaxAge: ONE_YEAR })
+        await putJsonBody(versionFile, body, { allowOverwrite: false, cacheControlMaxAge: ONE_YEAR })
       } catch (error) {
-        if (isAlreadyExists(error)) throw new ConflictError()
-        throw error
+        if (!(await holds(versionFile, body))) {
+          // Someone else's publish owns this version number.
+          if (isAlreadyExists(error)) throw new ConflictError()
+          throw error
+        }
+        // Our own earlier attempt landed; carry on.
       }
       try {
-        await putJson(CONTENT_PATH, content, { allowOverwrite: true, ifMatch, cacheControlMaxAge: CONTENT_MAX_AGE_SECONDS })
+        await putJsonBody(CONTENT_PATH, body, { allowOverwrite: true, ifMatch, cacheControlMaxAge: CONTENT_MAX_AGE_SECONDS })
       } catch (error) {
-        // Only a refused write proves content.json is unchanged; any other failure might have landed.
-        if (!(error instanceof BlobPreconditionFailedError)) throw error
+        if (await holds(CONTENT_PATH, body)) return // it landed; a retry or lost response reported otherwise
         await del(versionFile, { token }).catch((cleanupError: unknown) => {
-          console.error(`could not remove ${versionFile} after a refused write`, cleanupError)
+          console.error(`could not remove ${versionFile} after a failed write`, cleanupError)
         })
-        throw new ConflictError()
+        if (error instanceof BlobPreconditionFailedError) throw new ConflictError()
+        throw error
       }
     },
     async writeBackup(content: Content, savedAt: Date, opts?: BackupOptions): Promise<BackupInfo> {

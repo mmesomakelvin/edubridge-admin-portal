@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ConflictError, NotSeededError } from '@/lib/store'
+import { createHash } from 'node:crypto'
 import { content } from './fixtures'
 
 // Stand-in for the Vercel Blob SDK. Only what blob-store calls is modelled.
@@ -22,6 +23,9 @@ const fetchMock = vi.fn()
 const { createBlobStore } = await import('@/lib/blob-store')
 const store = () => createBlobStore('test-token')
 const url = (pathname: string) => `https://store.public.blob.vercel-storage.com/${pathname}`
+/** Blob's etag for a JSON body as blob-store writes it: the quoted MD5 of the bytes. */
+const etagOf = (c: unknown) => `"${createHash('md5').update(JSON.stringify(c, null, 2)).digest('hex')}"`
+const alreadyExists = () => new BlobError('Vercel Blob: This blob already exists, use allowOverwrite: true if you want to overwrite it.')
 const putPaths = () => sdk.put.mock.calls.map((c) => c[0] as string)
 
 /** Pretend the store holds content.json with this etag and these version files. */
@@ -77,23 +81,73 @@ describe('blob store', () => {
   })
 
   describe('writeContent', () => {
+    const v4 = content({ version: 4 })
+    /** head() answers from this map; a missing entry means the blob doesn't exist. */
+    function headsAre(heads: Record<string, string>) {
+      sdk.head.mockImplementation(async (pathname: string) => {
+        if (!(pathname in heads)) throw new BlobNotFoundError()
+        return { etag: heads[pathname], url: url(pathname) }
+      })
+    }
+
     it('creates the version file first, then updates content.json guarded by the etag', async () => {
-      await store().writeContent(content({ version: 4 }), '"etag-v3"')
+      await store().writeContent(v4, '"etag-v3"')
       expect(putPaths()).toEqual(['versions/content-v000004.json', 'content.json'])
       expect(sdk.put.mock.calls[0]?.[2]).toMatchObject({ allowOverwrite: false })
       expect(sdk.put.mock.calls[1]?.[2]).toMatchObject({ allowOverwrite: true, ifMatch: '"etag-v3"' })
     })
 
-    it('refuses when that version already exists (another publish got there first)', async () => {
-      sdk.put.mockRejectedValueOnce(new BlobError('Vercel Blob: This blob already exists, use `allowOverwrite: true` …'))
-      await expect(store().writeContent(content({ version: 4 }), '"etag-v3"')).rejects.toBeInstanceOf(ConflictError)
+    it('refuses when another publish already created that version', async () => {
+      headsAre({ 'versions/content-v000004.json': etagOf(content({ version: 4, updatedBy: 'other tab' })) })
+      sdk.put.mockRejectedValueOnce(alreadyExists())
+      await expect(store().writeContent(v4, '"etag-v3"')).rejects.toBeInstanceOf(ConflictError)
       expect(putPaths()).toEqual(['versions/content-v000004.json'])
+      expect(sdk.del).not.toHaveBeenCalled()
     })
 
     it('refuses and removes its version file when content.json moved on', async () => {
+      headsAre({ 'content.json': etagOf(content({ version: 4, updatedBy: 'other tab' })) })
       sdk.put.mockResolvedValueOnce({}).mockRejectedValueOnce(new BlobPreconditionFailedError())
-      await expect(store().writeContent(content({ version: 4 }), '"stale"')).rejects.toBeInstanceOf(ConflictError)
+      await expect(store().writeContent(v4, '"stale"')).rejects.toBeInstanceOf(ConflictError)
       expect(sdk.del).toHaveBeenCalledWith('versions/content-v000004.json', { token: 'test-token' })
+    })
+
+    // Found in the final review: @vercel/blob retries failed requests up to 10 times, so a write that
+    // landed can come back as "already exists" or 412 on the retry. Blob's etag is the MD5 of the bytes,
+    // which tells us for certain whether the stored file is ours.
+    it('carries on when a retried version-file create finds its own earlier attempt', async () => {
+      headsAre({ 'versions/content-v000004.json': etagOf(v4) })
+      sdk.put.mockRejectedValueOnce(alreadyExists()).mockResolvedValueOnce({})
+      await store().writeContent(v4, '"etag-v3"')
+      expect(putPaths()).toEqual(['versions/content-v000004.json', 'content.json'])
+    })
+
+    it('counts the publish as done when a retried content.json write finds it already landed', async () => {
+      headsAre({ 'content.json': etagOf(v4) })
+      sdk.put.mockResolvedValueOnce({}).mockRejectedValueOnce(new BlobPreconditionFailedError())
+      await store().writeContent(v4, '"etag-v3"')
+      expect(sdk.del).not.toHaveBeenCalled()
+    })
+
+    it('counts the publish as done when content.json landed but the response was lost', async () => {
+      headsAre({ 'content.json': etagOf(v4) })
+      sdk.put.mockResolvedValueOnce({}).mockRejectedValueOnce(new Error('fetch failed'))
+      await store().writeContent(v4, '"etag-v3"')
+      expect(sdk.del).not.toHaveBeenCalled()
+    })
+
+    it('removes its version file and reports the failure when content.json never landed', async () => {
+      headsAre({ 'content.json': '"etag-v3"' })
+      sdk.put.mockResolvedValueOnce({}).mockRejectedValueOnce(new Error('fetch failed'))
+      await expect(store().writeContent(v4, '"etag-v3"')).rejects.toThrow('fetch failed')
+      expect(sdk.del).toHaveBeenCalledWith('versions/content-v000004.json', { token: 'test-token' })
+    })
+
+    it('carries on when the version-file create errored but the file landed', async () => {
+      headsAre({ 'versions/content-v000004.json': etagOf(v4) })
+      sdk.put.mockRejectedValueOnce(new Error('fetch failed')).mockResolvedValueOnce({})
+      await store().writeContent(v4, '"etag-v3"')
+      expect(putPaths()).toEqual(['versions/content-v000004.json', 'content.json'])
     })
   })
 
