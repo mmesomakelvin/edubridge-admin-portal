@@ -37,7 +37,7 @@ describe('publishProgram', () => {
     const realRead = store.readContent
     store.readContent = async () => {
       const snapshot = await realRead()
-      await store.writeContent({ ...snapshot.content, updatedBy: 'other tab' }, snapshot.etag)
+      await store.writeContent({ ...snapshot.content, version: snapshot.content.version + 1, updatedBy: 'other tab' }, snapshot.etag)
       return snapshot
     }
     const result = await publishProgram(store, { slug, draft: edited(), baseVersion: 1, by, now: NOW })
@@ -136,7 +136,7 @@ describe('rollbackLastPublish', () => {
     const realRead = store.readContent
     store.readContent = async () => {
       const snapshot = await realRead()
-      await store.writeContent({ ...snapshot.content, updatedBy: 'other tab' }, snapshot.etag)
+      await store.writeContent({ ...snapshot.content, version: snapshot.content.version + 1, updatedBy: 'other tab' }, snapshot.etag)
       return snapshot
     }
     const result = await rollbackLastPublish(store, { baseVersion: 2, by, now: new Date('2026-10-14T13:00:00Z') })

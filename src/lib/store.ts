@@ -4,6 +4,11 @@ import type { Content } from './content-schema'
 export const CONTENT_PATH = 'content.json'
 export const FEED_PATH = 'cohorts-feed.json'
 export const BACKUP_PREFIX = 'backups/'
+/**
+ * One never-overwritten copy per version. content.json is overwritten on every publish, and Blob's CDN
+ * keeps serving the old copy for a while, so the portal reads the newest version file instead.
+ */
+export const VERSIONS_PREFIX = 'versions/'
 export const IMAGE_PREFIX = 'images/'
 /** Public cache lifetime for content.json and the feed: "live within about a minute". */
 export const CONTENT_MAX_AGE_SECONDS = 60
@@ -53,6 +58,17 @@ export interface ContentStore {
 }
 
 const pad6 = (n: number) => String(n).padStart(6, '0')
+
+export function versionPathname(version: number): string {
+  return `${VERSIONS_PREFIX}content-v${pad6(version)}.json`
+}
+
+const VERSION_RE = /^versions\/content-v(\d{6})\.json$/
+
+export function versionFromPathname(pathname: string): number | null {
+  const m = VERSION_RE.exec(pathname)
+  return m ? Number(m[1]) : null
+}
 
 /** The rollback marker lives in the pathname so history can be shown without reading every backup. */
 export function backupPathname(version: number, savedAt: Date, opts: BackupOptions = {}): string {

@@ -6,18 +6,20 @@ import {
   backupInfoFromPathname,
   backupPathname,
   sortBackups,
+  versionPathname,
   type BackupInfo,
   type ContentStore,
 } from './store'
 
 export type MemoryStore = ContentStore & { files: Map<string, unknown> }
 
-/** In-process store for tests and local demo mode. Mirrors Blob semantics (etags, create-once). */
+/** In-process store for tests and local demo mode. Mirrors Blob semantics (etags, create-once, one file per version). */
 export function createMemoryStore(initial?: Content): MemoryStore {
   const files = new Map<string, unknown>()
   let etagCounter = 0
   const nextEtag = () => `"m${++etagCounter}"`
   let current: { value: Content; etag: string } | null = initial ? { value: structuredClone(initial), etag: nextEtag() } : null
+  if (initial) files.set(versionPathname(initial.version), structuredClone(initial))
 
   return {
     files,
@@ -28,10 +30,13 @@ export function createMemoryStore(initial?: Content): MemoryStore {
     async createContent(content) {
       if (current) throw new Error('content.json already exists')
       current = { value: structuredClone(content), etag: nextEtag() }
+      files.set(versionPathname(content.version), structuredClone(content))
     },
     async writeContent(content, ifMatch) {
-      if (!current || current.etag !== ifMatch) throw new ConflictError()
+      const versionFile = versionPathname(content.version)
+      if (!current || current.etag !== ifMatch || files.has(versionFile)) throw new ConflictError()
       current = { value: structuredClone(content), etag: nextEtag() }
+      files.set(versionFile, structuredClone(content))
     },
     async writeBackup(content, savedAt, opts) {
       const pathname = backupPathname(content.version, savedAt, opts)

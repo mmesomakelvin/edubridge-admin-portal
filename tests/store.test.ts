@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { createMemoryStore } from '@/lib/memory-store'
-import { ConflictError, NotSeededError, backupInfoFromPathname, backupPathname, recentPublishes } from '@/lib/store'
+import { ConflictError, NotSeededError, backupInfoFromPathname, backupPathname, recentPublishes, versionFromPathname, versionPathname } from '@/lib/store'
 import { content } from './fixtures'
 
 describe('backup pathnames', () => {
@@ -16,6 +16,16 @@ describe('backup pathnames', () => {
   })
   it('ignores unrelated files', () => {
     expect(backupInfoFromPathname('backups/notes.txt')).toBeNull()
+  })
+})
+
+describe('version file pathnames', () => {
+  it('round-trips the version number', () => {
+    expect(versionPathname(3)).toBe('versions/content-v000003.json')
+    expect(versionFromPathname('versions/content-v000003.json')).toBe(3)
+  })
+  it('ignores unrelated files', () => {
+    expect(versionFromPathname('versions/notes.txt')).toBeNull()
   })
 })
 
@@ -59,6 +69,21 @@ describe('memory store', () => {
     const { etag } = await store.readContent()
     await store.writeContent(content({ version: 2 }), etag)
     await expect(store.writeContent(content({ version: 3 }), etag)).rejects.toBeInstanceOf(ConflictError)
+  })
+
+  it('refuses a version number that already has a version file', async () => {
+    const store = createMemoryStore(content())
+    const { etag } = await store.readContent()
+    store.files.set(versionPathname(2), content({ version: 2, updatedBy: 'other tab' }))
+    await expect(store.writeContent(content({ version: 2 }), etag)).rejects.toBeInstanceOf(ConflictError)
+    expect((await store.readContent()).content.version).toBe(1)
+  })
+
+  it('keeps a version file for every version it writes', async () => {
+    const store = createMemoryStore()
+    await store.createContent(content())
+    await store.writeContent(content({ version: 2 }), (await store.readContent()).etag)
+    expect([...store.files.keys()].filter((k) => k.startsWith('versions/'))).toEqual([versionPathname(1), versionPathname(2)])
   })
 
   it('hands out copies, not live references', async () => {
