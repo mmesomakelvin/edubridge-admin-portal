@@ -4,6 +4,7 @@ import { RollbackButton } from '@/components/RollbackButton'
 import { formatStamp } from '@/lib/format'
 import { recentPublishes } from '@/lib/store'
 import { getStore, readContentOrNull } from '@/lib/store-instance'
+import { adminOrRedirect } from '@/lib/session'
 
 export const dynamic = 'force-dynamic'
 
@@ -17,6 +18,7 @@ function RolledBackBadge({ from }: { from: number | undefined }) {
 }
 
 export default async function HistoryPage() {
+  await adminOrRedirect()
   const loaded = await readContentOrNull()
   if (!loaded) return <NotSeeded />
   const { content } = loaded

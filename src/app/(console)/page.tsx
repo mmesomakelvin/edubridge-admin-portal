@@ -7,10 +7,12 @@ import { computeMetrics, publishesThisMonth, seatsLeftDelta } from '@/lib/metric
 import { PROGRAMS, getProgram } from '@/lib/programs'
 import { sortBackups } from '@/lib/store'
 import { getStore, readContentOrNull } from '@/lib/store-instance'
+import { adminOrRedirect } from '@/lib/session'
 
 export const dynamic = 'force-dynamic'
 
 export default async function ProgramsPage({ searchParams }: { searchParams: Promise<{ p?: string }> }) {
+  await adminOrRedirect()
   const { p } = await searchParams
   const loaded = await readContentOrNull()
   if (!loaded) return <NotSeeded />

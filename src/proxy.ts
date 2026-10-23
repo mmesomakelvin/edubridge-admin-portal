@@ -3,7 +3,7 @@ import { auth } from '@/auth'
 import { isAllowedEmail, parseAllowlist } from '@/lib/allowlist'
 import { buildCsp, createNonce } from '@/lib/csp'
 import { isDemoMode } from '@/lib/demo'
-import { needsLoginRedirect } from '@/lib/gate'
+import { gateDecision } from '@/lib/gate'
 
 /** Next.js reads the nonce from the request's CSP header and stamps it on its own scripts. */
 function withCsp(req: NextRequest) {
@@ -17,13 +17,17 @@ function withCsp(req: NextRequest) {
   return response
 }
 
-// Every page except sign-in itself requires the allowlisted session. Server actions and API routes
-// check it themselves (see needsLoginRedirect); this is the first gate, not the only one.
+// First gate only: pages, server actions and API routes all re-check the session themselves.
 export const proxy = auth((req) => {
   const allowed = isDemoMode() || isAllowedEmail(req.auth?.user?.email, parseAllowlist(process.env.ALLOWED_EMAILS))
-  if (needsLoginRedirect({ pathname: req.nextUrl.pathname, isServerAction: req.headers.has('next-action'), allowed })) {
-    return Response.redirect(new URL('/login', req.nextUrl.origin))
-  }
+  const decision = gateDecision({
+    pathname: req.nextUrl.pathname,
+    method: req.method,
+    isServerAction: req.headers.has('next-action'),
+    allowed,
+  })
+  if (decision === 'redirect-to-login') return Response.redirect(new URL('/login', req.nextUrl.origin))
+  if (decision === 'unauthorized') return Response.json({ error: 'Your session has ended. Sign in again.' }, { status: 401 })
   return withCsp(req)
 })
 

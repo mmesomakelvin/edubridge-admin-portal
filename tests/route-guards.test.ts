@@ -14,6 +14,16 @@ describe('session guard rails', () => {
     expect(routes.filter((r) => !r.text.includes('requireAdmin(')).map((r) => r.f)).toEqual([])
   })
 
+  // Flagged by the automated security review: a layout's check isn't a guarantee for its pages
+  // (segments can render without re-running the layout), so each console page checks for itself.
+  it('every console page and the console layout check the admin session themselves', () => {
+    const files = readdirSync(join(APP, '(console)'), { recursive: true, encoding: 'utf8' })
+      .filter((f) => /(^|[\\/])(page|layout)\.tsx$/.test(f))
+      .map((f) => ({ f, text: readFileSync(join(APP, '(console)', f), 'utf8') }))
+    expect(files.length).toBeGreaterThanOrEqual(4)
+    expect(files.filter((p) => !p.text.includes('await adminOrRedirect()')).map((p) => p.f)).toEqual([])
+  })
+
   it('every server action other than sign-out checks the admin session first', () => {
     const text = readFileSync(join(APP, 'actions.ts'), 'utf8')
     const bodies = text.split(/\nexport async function /).slice(1)

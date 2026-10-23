@@ -3,6 +3,7 @@ import { NotSeeded } from '@/components/NotSeeded'
 import { ProgramEditor } from '@/components/editor/ProgramEditor'
 import { getProgram } from '@/lib/programs'
 import { readContentOrNull } from '@/lib/store-instance'
+import { adminOrRedirect } from '@/lib/session'
 
 export const dynamic = 'force-dynamic'
 
@@ -13,6 +14,7 @@ export default async function EditProgramPage({
   params: Promise<{ slug: string }>
   searchParams: Promise<{ published?: string; feed?: string }>
 }) {
+  await adminOrRedirect()
   const [{ slug }, { published, feed }] = await Promise.all([params, searchParams])
   const info = getProgram(slug)
   if (!info) notFound()
