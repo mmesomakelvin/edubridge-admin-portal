@@ -45,6 +45,7 @@ export interface ContentStore {
   createContent(content: Content): Promise<void>
   writeContent(content: Content, ifMatch: string): Promise<void>
   writeBackup(content: Content, savedAt: Date, opts?: BackupOptions): Promise<BackupInfo>
+  deleteBackup(pathname: string): Promise<void>
   listBackups(): Promise<BackupInfo[]>
   readBackup(pathname: string): Promise<Content>
   writeFeed(feed: CohortsFeed): Promise<void>

@@ -43,6 +43,9 @@ describe('publishProgram', () => {
     const result = await publishProgram(store, { slug, draft: edited(), baseVersion: 1, by, now: NOW })
     expect(result).toEqual({ ok: false, reason: 'conflict' })
     expect((await realRead()).content.updatedBy).toBe('other tab')
+    // Found in the Task 17 end-to-end check: the refused attempt's backup stayed behind and showed up
+    // in history as a publish that never happened.
+    expect(await store.listBackups()).toEqual([])
   })
 
   it('rejects invalid edits without writing anything', async () => {
@@ -124,6 +127,21 @@ describe('rollbackLastPublish', () => {
   it('reports when there is nothing to roll back to', async () => {
     const store = createMemoryStore(content())
     expect(await rollbackLastPublish(store, { baseVersion: 1, by, now: NOW })).toEqual({ ok: false, reason: 'no-backup' })
+  })
+
+  it('leaves no backup behind when another publish lands mid-rollback', async () => {
+    const store = createMemoryStore(content())
+    await publishProgram(store, { slug, draft: edited(), baseVersion: 1, by, now: NOW })
+    const before = await store.listBackups()
+    const realRead = store.readContent
+    store.readContent = async () => {
+      const snapshot = await realRead()
+      await store.writeContent({ ...snapshot.content, updatedBy: 'other tab' }, snapshot.etag)
+      return snapshot
+    }
+    const result = await rollbackLastPublish(store, { baseVersion: 2, by, now: new Date('2026-10-14T13:00:00Z') })
+    expect(result).toEqual({ ok: false, reason: 'conflict' })
+    expect(await store.listBackups()).toEqual(before)
   })
 
   it('refuses with a conflict when the live version moved on', async () => {

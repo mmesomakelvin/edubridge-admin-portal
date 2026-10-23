@@ -2,7 +2,7 @@ import { finalizeCohortIds } from './cohort-ids'
 import { buildCohortsFeed } from './cohorts-feed'
 import { ProgramContentSchema, type Content } from './content-schema'
 import { isProgramSlug } from './programs'
-import { ConflictError, type ContentStore } from './store'
+import { ConflictError, type BackupInfo, type ContentStore } from './store'
 import { hasErrors, validateProgram, type Issue } from './validate'
 
 export interface PublishInput {
@@ -27,13 +27,24 @@ export type RollbackResult =
   | { ok: true; version: number; restoredFrom: number; feedUpdated: boolean }
   | { ok: false; reason: 'conflict' | 'no-backup' }
 
-/** Write content (etag-guarded), then the derived feed. A failed feed write never undoes a publish. */
-async function commit(store: ContentStore, next: Content, etag: string): Promise<{ ok: true; feedUpdated: boolean } | { ok: false }> {
+/**
+ * Write content (etag-guarded), then the derived feed. A failed feed write never undoes a publish.
+ * A refused write removes the backup saved for it, so history never shows a publish that didn't happen.
+ */
+async function commit(
+  store: ContentStore,
+  next: Content,
+  etag: string,
+  backup: BackupInfo,
+): Promise<{ ok: true; feedUpdated: boolean } | { ok: false }> {
   try {
     await store.writeContent(next, etag)
   } catch (error) {
-    if (error instanceof ConflictError) return { ok: false }
-    throw error
+    if (!(error instanceof ConflictError)) throw error
+    await store.deleteBackup(backup.pathname).catch((cleanupError: unknown) => {
+      console.error(`could not remove ${backup.pathname} after a refused write`, cleanupError)
+    })
+    return { ok: false }
   }
   try {
     await store.writeFeed(buildCohortsFeed(next))
@@ -63,7 +74,7 @@ export async function publishProgram(store: ContentStore, input: PublishInput): 
   const issues = validateProgram(draft, { now, original: content.programs[input.slug] })
   if (hasErrors(issues)) return { ok: false, reason: 'invalid', issues }
 
-  await store.writeBackup(content, now)
+  const backup = await store.writeBackup(content, now)
   const next: Content = {
     ...content,
     version: content.version + 1,
@@ -71,7 +82,7 @@ export async function publishProgram(store: ContentStore, input: PublishInput): 
     updatedBy: input.by,
     programs: { ...content.programs, [input.slug]: draft },
   }
-  const result = await commit(store, next, etag)
+  const result = await commit(store, next, etag, backup)
   return result.ok ? { ok: true, version: next.version, feedUpdated: result.feedUpdated } : { ok: false, reason: 'conflict' }
 }
 
@@ -84,9 +95,9 @@ export async function rollbackLastPublish(store: ContentStore, input: RollbackIn
   if (!target) return { ok: false, reason: 'no-backup' }
   const restored = await store.readBackup(target.pathname)
 
-  await store.writeBackup(content, now, { rollbackTo: target.version })
+  const backup = await store.writeBackup(content, now, { rollbackTo: target.version })
   const next: Content = { ...restored, version: content.version + 1, updatedAt: now.toISOString(), updatedBy: input.by }
-  const result = await commit(store, next, etag)
+  const result = await commit(store, next, etag, backup)
   return result.ok
     ? { ok: true, version: next.version, restoredFrom: target.version, feedUpdated: result.feedUpdated }
     : { ok: false, reason: 'conflict' }

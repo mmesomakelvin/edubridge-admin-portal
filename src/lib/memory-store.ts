@@ -38,6 +38,9 @@ export function createMemoryStore(initial?: Content): MemoryStore {
       files.set(pathname, structuredClone(content))
       return backupInfoFromPathname(pathname)!
     },
+    async deleteBackup(pathname) {
+      files.delete(pathname)
+    },
     async listBackups() {
       const infos = [...files.keys()].map(backupInfoFromPathname).filter((b): b is BackupInfo => b !== null)
       return sortBackups(infos)

@@ -1,4 +1,4 @@
-import { BlobPreconditionFailedError, get, list, put } from '@vercel/blob'
+import { BlobPreconditionFailedError, del, get, list, put } from '@vercel/blob'
 import type { CohortsFeed } from './cohorts-feed'
 import { ContentSchema, type Content } from './content-schema'
 import {
@@ -61,6 +61,9 @@ export function createBlobStore(token = process.env.BLOB_READ_WRITE_TOKEN): Cont
       const pathname = backupPathname(content.version, savedAt, opts)
       await putJson(pathname, content, { allowOverwrite: false, cacheControlMaxAge: ONE_YEAR })
       return backupInfoFromPathname(pathname)!
+    },
+    async deleteBackup(pathname: string) {
+      await del(pathname, { token })
     },
     async listBackups() {
       const infos: BackupInfo[] = []
