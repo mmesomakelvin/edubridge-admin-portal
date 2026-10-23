@@ -22,6 +22,24 @@ URL (`admin.edubridgeacademy.com`) with its own deployment, secrets, and login.
 3. **Then plan:** turn the spec into an implementation plan before writing code
    (e.g. the Superpowers `writing-plans` skill), and get it approved.
 
+## Local development
+
+1. `npm install`
+2. Copy `.env.example` to `.env.local` and fill it in (see comments there). Use a **dev** Blob store locally.
+3. First time only: `npm run seed -- --public-repo "<path to ea-website-revamp>"`, then `npm run parity -- --public-repo "<same path>"`.
+4. `npm run dev` → http://localhost:3000
+
+**Demo mode (no Google/Blob needed):** set `ADMIN_DEMO=1` and `DEMO_PUBLIC_REPO=<path to ea-website-revamp>` in `.env.local`.
+The UI runs against an in-memory copy of today's site data. Production builds ignore these settings.
+
+**Tests:** `npm test` · **Types:** `npm run typecheck`
+
+**How the store is laid out (Vercel Blob):** `content.json` is what the public site reads and is
+overwritten on every publish. Each version is also written once to `versions/content-vNNNNNN.json`;
+the portal reads the newest of those, because Blob's CDN can keep serving an overwritten public file
+for several seconds. `backups/` holds the version each publish replaced (used by rollback),
+`cohorts-feed.json` is the win-back feed, and `images/` holds the optimised landing images.
+
 ---
 
 ## What this portal does (scope)
@@ -128,10 +146,10 @@ The code for this lives in `src/lib/csp.ts`, `src/proxy.ts`, `next.config.ts`,
 
 ## To do (high level)
 
-- [ ] Plan the build from `docs/SPEC.md` and get it approved.
-- [ ] Scaffold the Next.js app + Auth.js (Google) + Vercel Blob.
-- [ ] Seed `content.json` from the public site's current data; parity-check.
-- [ ] Build dashboard + program editor (cohorts / pricing / image) + review-and-publish.
+- [x] Plan the build from `docs/SPEC.md` and get it approved.
+- [x] Scaffold the Next.js app + Auth.js (Google) + Vercel Blob.
+- [x] Seed `content.json` from the public site's current data; parity-check.
+- [x] Build dashboard + program editor (cohorts / pricing / image) + review-and-publish.
 - [ ] Add the runtime overlay to the public site (separate PR in the public repo).
 - [ ] Repoint the Apps Script win-back automation to the Blob cohorts feed.
 - [ ] Set up the new GitHub repo + Vercel project + `admin.edubridgeacademy.com`.
