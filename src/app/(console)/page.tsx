@@ -38,7 +38,7 @@ export default async function ProgramsPage({ searchParams }: { searchParams: Pro
           content={content}
           now={now}
         />
-        <div className="table-wrap">
+        <div className="ptable-wrap">
           <table className="ptable">
             <thead>
               <tr>
