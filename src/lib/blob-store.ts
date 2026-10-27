@@ -8,8 +8,8 @@ import {
   CONTENT_PATH,
   ConflictError,
   FEED_PATH,
-  IMAGE_PREFIX,
   NotSeededError,
+  UPLOADED_IMAGE_PATH,
   VERSIONS_PREFIX,
   backupInfoFromPathname,
   backupPathname,
@@ -185,12 +185,16 @@ export function createBlobStore(token = process.env.BLOB_READ_WRITE_TOKEN): Cont
       const version = (result?.json as { version?: unknown } | undefined)?.version
       return typeof version === 'number' ? version : null
     },
-    ownsImageUrl(url: string) {
+    async ownsImageUrl(url: string) {
+      // Exactly the URL putImage returns for an upload: this store's host, an upload-shaped pathname, nothing else.
+      const pathname = url.startsWith(`https://${storeHost}/`) ? url.slice(`https://${storeHost}/`.length) : ''
+      if (!UPLOADED_IMAGE_PATH.test(pathname)) return false
+      // ...and the upload actually landed (only the upload route writes images/, always as WebP).
       try {
-        const parsed = new URL(url)
-        return parsed.protocol === 'https:' && parsed.hostname === storeHost && parsed.pathname.startsWith(`/${IMAGE_PREFIX}`)
-      } catch {
-        return false
+        return (await head(pathname, { token })).contentType === 'image/webp'
+      } catch (error) {
+        if (error instanceof BlobNotFoundError) return false
+        throw error
       }
     },
     async putImage(pathname: string, body: Buffer, contentType: string) {

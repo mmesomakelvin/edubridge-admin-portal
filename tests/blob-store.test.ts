@@ -155,17 +155,41 @@ describe('blob store', () => {
   // production. A new landing image must come from this store's own images/ folder.
   describe('ownsImageUrl', () => {
     const own = createBlobStore('vercel_blob_rw_AbCd1234EfGh5678_secretpart')
-    it('accepts images in this store', () => {
-      expect(own.ownsImageUrl('https://abcd1234efgh5678.public.blob.vercel-storage.com/images/data-school-0123456789abcdef.webp')).toBe(true)
+    const host = 'https://abcd1234efgh5678.public.blob.vercel-storage.com'
+    const uploaded = 'images/data-school-0123456789abcdef.webp'
+
+    it('accepts an uploaded image this store holds', async () => {
+      sdk.head.mockResolvedValue({ contentType: 'image/webp', url: `${host}/${uploaded}` })
+      expect(await own.ownsImageUrl(`${host}/${uploaded}`)).toBe(true)
+      expect(sdk.head).toHaveBeenCalledWith(uploaded, expect.objectContaining({ token: expect.any(String) }))
     })
+
+    // Issue #4: a URL can name this store's images/ folder without being an image the upload route saved.
+    it('rejects an upload-shaped URL the store does not hold', async () => {
+      sdk.head.mockRejectedValue(new BlobNotFoundError())
+      expect(await own.ownsImageUrl(`${host}/${uploaded}`)).toBe(false)
+    })
+    it('rejects a blob at that path that is not a WebP image', async () => {
+      sdk.head.mockResolvedValue({ contentType: 'text/html', url: `${host}/${uploaded}` })
+      expect(await own.ownsImageUrl(`${host}/${uploaded}`)).toBe(false)
+    })
+
     it.each([
-      'https://otherstore0000000.public.blob.vercel-storage.com/images/x.webp',
-      'https://abcd1234efgh5678.public.blob.vercel-storage.com/content.json',
-      'http://abcd1234efgh5678.public.blob.vercel-storage.com/images/x.webp',
+      `https://otherstore0000000.public.blob.vercel-storage.com/${uploaded}`,
+      `http://abcd1234efgh5678.public.blob.vercel-storage.com/${uploaded}`,
+      `${host}/content.json`,
+      `${host}/images/not-an-image.html`,
+      `${host}/images/x.webp`,
+      `${host}/images/data-school-0123456789abcdef.png`,
+      `${host}/images/nested/data-school-0123456789abcdef.webp`,
+      `${host}/${uploaded}?v=1`,
+      `${host}/${uploaded}#x`,
       'data:image/webp;base64,UklGRg==',
+      'data:image/png;base64,AAAA',
       'not a url',
-    ])('rejects %s', (u) => {
-      expect(own.ownsImageUrl(u)).toBe(false)
+    ])('rejects %s without asking Blob', async (u) => {
+      expect(await own.ownsImageUrl(u)).toBe(false)
+      expect(sdk.head).not.toHaveBeenCalled()
     })
   })
 

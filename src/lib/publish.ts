@@ -76,7 +76,7 @@ export async function publishProgram(store: ContentStore, input: PublishInput): 
   const issues = validateProgram(draft, { now, original: content.programs[input.slug] })
   if (hasErrors(issues)) return { ok: false, reason: 'invalid', issues }
   // A changed image must be one this store handed out (validate.ts only checks the URL's shape).
-  if (draft.landingImageUrl !== content.programs[input.slug]?.landingImageUrl && !store.ownsImageUrl(draft.landingImageUrl)) {
+  if (draft.landingImageUrl !== content.programs[input.slug]?.landingImageUrl && !(await store.ownsImageUrl(draft.landingImageUrl))) {
     return { ok: false, reason: 'invalid', issues: [{ path: 'landingImageUrl', level: 'error', message: 'Upload the image here instead of pasting a link' }] }
   }
 
