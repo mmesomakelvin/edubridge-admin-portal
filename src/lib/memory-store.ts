@@ -1,3 +1,4 @@
+import type { CohortsFeed } from './cohorts-feed'
 import type { Content } from './content-schema'
 import {
   ConflictError,
@@ -58,6 +59,9 @@ export function createMemoryStore(initial?: Content): MemoryStore {
     },
     async writeFeed(feed) {
       files.set(FEED_PATH, structuredClone(feed))
+    },
+    async readFeedVersion() {
+      return (files.get(FEED_PATH) as CohortsFeed | undefined)?.version ?? null
     },
     // Only the data URLs putImage handed out. This store backs local demo mode, never production.
     async ownsImageUrl(url) {

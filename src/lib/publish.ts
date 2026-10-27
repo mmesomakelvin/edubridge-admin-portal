@@ -1,6 +1,6 @@
 import { finalizeCohortIds } from './cohort-ids'
-import { buildCohortsFeed } from './cohorts-feed'
 import { ProgramContentSchema, type Content } from './content-schema'
+import { syncFeed } from './feed-sync'
 import { isProgramSlug } from './programs'
 import { ConflictError, type BackupInfo, type ContentStore } from './store'
 import { hasErrors, validateProgram, type Issue } from './validate'
@@ -28,7 +28,8 @@ export type RollbackResult =
   | { ok: false; reason: 'conflict' | 'no-backup' }
 
 /**
- * Write content (etag-guarded), then the derived feed. A failed feed write never undoes a publish.
+ * Write content (etag-guarded), then the derived feed (see syncFeed). A failed feed write never undoes
+ * a publish; reconcileFeed repairs the feed later.
  * writeContent only throws when the content did not land (blob-store checks before reporting), so any
  * failure removes the backup saved for it and history never shows a publish that didn't happen.
  */
@@ -48,10 +49,10 @@ async function commit(
     throw error
   }
   try {
-    await store.writeFeed(buildCohortsFeed(next))
+    await syncFeed(store, next)
     return { ok: true, feedUpdated: true }
   } catch (error) {
-    console.error('cohorts-feed.json write failed; the next publish will rewrite it', error)
+    console.error('cohorts-feed.json write failed; reconcileFeed will rebuild it', error)
     return { ok: true, feedUpdated: false }
   }
 }

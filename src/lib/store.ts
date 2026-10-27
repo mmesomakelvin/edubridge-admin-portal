@@ -57,6 +57,8 @@ export interface ContentStore {
   listBackups(): Promise<BackupInfo[]>
   readBackup(pathname: string): Promise<Content>
   writeFeed(feed: CohortsFeed): Promise<void>
+  /** The content version the stored feed was built from; null if there is no feed or it predates versioning. */
+  readFeedVersion(): Promise<number | null>
   putImage(pathname: string, body: Buffer, contentType: string): Promise<string>
   /** True only for an image this store saved through putImage and still holds; a newly published image must be one. */
   ownsImageUrl(url: string): Promise<boolean>

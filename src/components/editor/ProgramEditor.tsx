@@ -60,7 +60,7 @@ export function ProgramEditor({ info, initial, baseVersion, nowIso, publishedVer
         )}
         {feedWarning && (
           <p className="banner banner-warn" role="alert">
-            Published, but the win-back cohort feed didn’t update. Publish again, or tell a developer.
+            Published, but the win-back cohort feed didn’t update yet. The portal retries it automatically when the Programs page opens and once a day.
           </p>
         )}
         <header className="phead">

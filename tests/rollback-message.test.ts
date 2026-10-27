@@ -14,7 +14,7 @@ describe('rollbackMessage', () => {
   it('warns when the win-back feed did not update', () => {
     expect(rollbackMessage({ ok: true, version: 7, restoredFrom: 5, feedUpdated: false })).toEqual({
       tone: 'warn',
-      text: "Rolled back. Version 5's content is live again as version 7, but the win-back cohort feed didn't update. Publish or roll back again, or tell a developer.",
+      text: "Rolled back. Version 5's content is live again as version 7, but the win-back cohort feed didn't update yet. The portal retries it automatically when the Programs page opens and once a day.",
     })
   })
 

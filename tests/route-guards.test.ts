@@ -6,12 +6,14 @@ import { describe, expect, it } from 'vitest'
 const APP = join(process.cwd(), 'src', 'app')
 
 describe('session guard rails', () => {
-  it('every API route (other than Auth.js) checks the admin session', () => {
+  it('every API route (other than Auth.js) checks the admin session, or the cron secret under api/cron/', () => {
     const routes = readdirSync(join(APP, 'api'), { recursive: true, encoding: 'utf8' })
       .filter((f) => /(^|[\\/])route\.ts$/.test(f) && !f.startsWith('auth'))
       .map((f) => ({ f, text: readFileSync(join(APP, 'api', f), 'utf8') }))
     expect(routes.length).toBeGreaterThan(0)
-    expect(routes.filter((r) => !r.text.includes('requireAdmin(')).map((r) => r.f)).toEqual([])
+    const guarded = (r: { f: string; text: string }) =>
+      /^cron[\\/]/.test(r.f) ? r.text.includes('if (!isCronRequest(') : r.text.includes('requireAdmin(')
+    expect(routes.filter((r) => !guarded(r)).map((r) => r.f)).toEqual([])
   })
 
   // Flagged by the automated security review: a layout's check isn't a guarantee for its pages
