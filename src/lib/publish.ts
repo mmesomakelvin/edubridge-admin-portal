@@ -1,5 +1,5 @@
 import { finalizeCohortIds } from './cohort-ids'
-import { ProgramContentSchema, type Content } from './content-schema'
+import { ProgramContentSchema, type Content, type PricingOption } from './content-schema'
 import { syncFeed } from './feed-sync'
 import { isProgramSlug } from './programs'
 import { ConflictError, type BackupInfo, type ContentStore } from './store'
@@ -57,6 +57,22 @@ async function commit(
   }
 }
 
+/**
+ * The editor changes only an option's title, price label, amount and description. Its order, highlights
+ * and "recommended" badge are kept from the live version, so a draft can't change what the review panel
+ * doesn't show (issue #3). Unknown options pass through so validateProgram can reject an added or
+ * removed option.
+ */
+export function keepPricingLayout(live: PricingOption[], draft: PricingOption[]): PricingOption[] {
+  const edits = new Map(draft.map((o) => [o.id, o]))
+  const kept = live.flatMap((o) => {
+    const edit = edits.get(o.id)
+    return edit ? [{ ...o, title: edit.title, priceLabel: edit.priceLabel, amount: edit.amount, description: edit.description }] : []
+  })
+  const liveIds = new Set(live.map((o) => o.id))
+  return [...kept, ...draft.filter((o) => !liveIds.has(o.id))]
+}
+
 export async function publishProgram(store: ContentStore, input: PublishInput): Promise<PublishResult> {
   if (!isProgramSlug(input.slug)) return { ok: false, reason: 'unknown-program' }
   const parsed = ProgramContentSchema.safeParse(input.draft)
@@ -72,7 +88,12 @@ export async function publishProgram(store: ContentStore, input: PublishInput): 
   const { content, etag } = await store.readContent()
   if (content.version !== input.baseVersion) return { ok: false, reason: 'conflict' }
 
-  const draft = { ...parsed.data, cohorts: finalizeCohortIds(parsed.data.cohorts) }
+  const live = content.programs[input.slug]
+  const draft = {
+    ...parsed.data,
+    cohorts: finalizeCohortIds(parsed.data.cohorts),
+    pricing: live ? keepPricingLayout(live.pricing, parsed.data.pricing) : parsed.data.pricing,
+  }
   const issues = validateProgram(draft, { now, original: content.programs[input.slug] })
   if (hasErrors(issues)) return { ok: false, reason: 'invalid', issues }
   // A changed image must be one this store handed out (validate.ts only checks the URL's shape).

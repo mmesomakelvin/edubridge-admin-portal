@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { createMemoryStore } from '@/lib/memory-store'
-import { publishProgram, rollbackLastPublish } from '@/lib/publish'
+import { describeChanges } from '@/lib/diff'
+import { keepPricingLayout, publishProgram, rollbackLastPublish } from '@/lib/publish'
 import type { CohortsFeed } from '@/lib/cohorts-feed'
 import { FEED_PATH } from '@/lib/store'
 import { NOW, cohort, content, program } from './fixtures'
@@ -172,12 +173,49 @@ describe('publishProgram', () => {
     expect((await store.readContent()).content.version).toBe(2)
   })
 
+  // Issue #3: order, highlights and the recommended badge have no editor controls and no line in the
+  // review panel, so a draft that changes them must not change what is stored.
+  it('keeps pricing order, highlights and the recommended badge from the live version', async () => {
+    const store = createMemoryStore(content())
+    const [full, installments] = program().pricing
+    const tampered = program({
+      pricing: [
+        { ...installments!, highlights: ['Injected'], recommended: true },
+        { ...full!, priceLabel: '₦180,000', amount: 180000, highlights: [], recommended: false },
+      ],
+    })
+    expect(await publishProgram(store, { slug, draft: tampered, baseVersion: 1, by, now: NOW })).toMatchObject({ ok: true })
+
+    const saved = (await store.readContent()).content.programs[slug]!
+    expect(saved.pricing).toEqual([{ ...full!, priceLabel: '₦180,000', amount: 180000 }, installments])
+    // What changed is exactly what the review panel listed.
+    expect(describeChanges(program(), saved, NOW)).toEqual(['Pay in full: price label "₦175,000" → "₦180,000"; amount ₦175,000 → ₦180,000'])
+  })
+
+  it('stores nothing new when a draft only reorders or restyles pricing', async () => {
+    const store = createMemoryStore(content())
+    const reordered = program({ pricing: [...program().pricing].reverse().map((o) => ({ ...o, highlights: ['x'] })) })
+    await publishProgram(store, { slug, draft: reordered, baseVersion: 1, by, now: NOW })
+    const saved = (await store.readContent()).content.programs[slug]!
+    expect(saved).toEqual(program())
+    expect(describeChanges(program(), saved, NOW)).toEqual([])
+  })
+
   it('rejects programs outside the seven', async () => {
     const store = createMemoryStore(content())
     expect(await publishProgram(store, { slug: 'corporate-training', draft: edited(), baseVersion: 1, by, now: NOW })).toEqual({
       ok: false,
       reason: 'unknown-program',
     })
+  })
+})
+
+describe('keepPricingLayout', () => {
+  const [full, installments] = program().pricing
+
+  it('passes unknown options through and drops missing ones, so validation still rejects a changed set', () => {
+    const extra = { ...installments!, id: 'extra' }
+    expect(keepPricingLayout([full!, installments!], [full!, extra]).map((o) => o.id)).toEqual(['full', 'extra'])
   })
 })
 
