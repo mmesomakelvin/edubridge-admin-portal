@@ -3,13 +3,16 @@
 Internal admin portal that lets trusted EduBridge staff change **program dates**,
 **pricing**, and **landing/placeholder images** for every course — without a developer
 or a redeploy. Once the public site (`www.edubridgeacademy.com`) reads the content store
-(a separate follow-up in the public repo), published changes appear there within about a minute.
+(Plan 2, a follow-up in the public repo), published changes will appear there within about 5 minutes.
 
 This is a **new, separate project** from the public marketing site. It lives on its own
 URL (`admin.edubridgeacademy.com`) with its own deployment, secrets, and login.
 
-> **Status:** being built on the `feat/admin-portal` branch (plan:
-> `docs/superpowers/plans/2026-10-14-admin-portal.md`). Not live yet.
+> **Status (2026-10-27):** live at **https://admin.edubridgeacademy.com** since 2026-10-23.
+> **Not yet connected to the public site:** publishing changes nothing on `www.edubridgeacademy.com`
+> until Plan 2 ships, so don't publish real edits yet. The first review's issues #1–#4 are fixed
+> (PRs #7, #9, #10). Plan 2 is designed and paused while the public site's bank-transfer payment work
+> is finished.
 
 ---
 
@@ -19,9 +22,11 @@ URL (`admin.edubridgeacademy.com`) with its own deployment, secrets, and login.
    rollout and testing. The original look is in [`design/mockup.html`](design/mockup.html).
 2. **How it was built:** [`docs/superpowers/plans/2026-10-14-admin-portal.md`](docs/superpowers/plans/2026-10-14-admin-portal.md)
    — the task-by-task plan (Tasks 1–18).
-3. **Next up after go-live:** the Analytics page design,
+3. **Next up:** Plan 2, the public site reads the portal,
+   [`docs/superpowers/specs/2026-10-23-public-site-overlay-design.md`](docs/superpowers/specs/2026-10-23-public-site-overlay-design.md).
+   After that, the Analytics page,
    [`docs/superpowers/specs/2026-10-23-analytics-design.md`](docs/superpowers/specs/2026-10-23-analytics-design.md).
-4. **To run it locally:** see *Local development* below.
+4. **To run it locally:** see *Local development* below. **Where the live pieces are:** see *Production* below.
 
 ## Local development
 
@@ -35,11 +40,24 @@ The UI runs against an in-memory copy of today's site data. Production builds ig
 
 **Tests:** `npm test` · **Types:** `npm run typecheck`
 
+`CRON_SECRET` in `.env.example` is only needed in production (see below).
+
 **How the store is laid out (Vercel Blob):** `content.json` is what the public site reads and is
 overwritten on every publish. Each version is also written once to `versions/content-vNNNNNN.json`;
 the portal reads the newest of those, because Blob's CDN can keep serving an overwritten public file
 for several seconds. `backups/` holds the version each publish replaced (used by rollback),
 `cohorts-feed.json` is the win-back feed, and `images/` holds the optimised landing images.
+
+## Production
+
+| Piece | Where |
+|---|---|
+| App | Vercel project `edubridge-admin-portal`, team "EduBridge Academy's projects" (Hobby plan). Every merge to `main` deploys to production. |
+| Domain | `admin.edubridgeacademy.com`. DNS is at Squarespace Domains: a CNAME `admin` and a TXT `_vercel`. The `_vercel` TXT holds several values for other domains, so only ever **add** values to it. |
+| Environment variables (Production only, all secret) | `AUTH_SECRET`, `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`, `ALLOWED_EMAILS`, `BLOB_READ_WRITE_TOKEN`, `CRON_SECRET`. A changed variable takes effect only after a redeploy. |
+| Content store | Vercel Blob store `edubridge-content` (public), connected with a read-write token. `edubridge-admin-dev` is for local work only and must never be connected to the project. |
+| Sign-in | Google OAuth client in the Google Cloud project "EduBridge Admin Portal" (audience Internal). Redirect URIs: `localhost:3000` and `admin.edubridgeacademy.com`. |
+| Daily job | Vercel Cron (`vercel.json`) calls `/api/cron/sync-feed` at 05:00 UTC to repair the win-back feed if it fell behind. Vercel sends `CRON_SECRET`; the route refuses everyone else. Each run is visible in the project's Logs. |
 
 ---
 
@@ -94,8 +112,10 @@ a cohort name), a link or image address that is really a script, or uploading a
 ### Defence 1: never treat text as code
 
 Everything staff type (names, prices, labels) is shown as plain text, never as page
-code. Image addresses must point at our own storage. Uploaded images are opened,
-checked, and re-saved as fresh WebP pictures, so a disguised file can't survive.
+code. Uploaded images are opened, checked, and re-saved as fresh WebP pictures, so a
+disguised file can't survive. A new landing image must be one this portal uploaded:
+it has to sit in our own storage's `images/` folder under the exact name an upload
+gets, and the portal checks it really exists there as a WebP picture before publishing.
 
 ### Defence 2: the Content Security Policy (CSP)
 
@@ -130,7 +150,12 @@ own, but they make sure nobody quietly removes a defence later.
 
 Only allow-listed Google accounts can sign in; every publish, rollback and upload
 re-checks the sign-in on the server; and the sign-in cookie can't be read by
-scripts at all.
+scripts at all. The one address that skips sign-in is the daily job
+(`/api/cron/…`), which needs `CRON_SECRET` instead.
+
+Publishing can only change what the review screen lists. A pricing option's order,
+feature bullets and "recommended" badge have no editor controls, so publishing
+always keeps them from the live version.
 
 The code for this lives in `src/lib/csp.ts`, `src/proxy.ts`, `next.config.ts`,
 `tests/csp.test.ts` and `tests/xss-guards.test.ts`.
@@ -142,7 +167,7 @@ The code for this lives in `src/lib/csp.ts`, `src/proxy.ts`, `next.config.ts`,
   `product/sections/*/data.json`, `public/cohorts.json`, `src/lib/cohort-status.ts`,
   the program pages and homepage components, and `apps-script/Code.gs` (win-back).
 - **Canonical public domain:** `https://www.edubridgeacademy.com`
-- **Planned admin domain:** `https://admin.edubridgeacademy.com`
+- **Admin domain (live):** `https://admin.edubridgeacademy.com`
 
 ## Decisions locked
 
@@ -156,6 +181,11 @@ The code for this lives in `src/lib/csp.ts`, `src/proxy.ts`, `next.config.ts`,
 - [x] Scaffold the Next.js app + Auth.js (Google) + Vercel Blob.
 - [x] Seed `content.json` from the public site's current data; parity-check.
 - [x] Build dashboard + program editor (cohorts / pricing / image) + review-and-publish.
-- [ ] Add the runtime overlay to the public site (separate PR in the public repo).
-- [ ] Repoint the Apps Script win-back automation to the Blob cohorts feed.
-- [ ] Set up the new GitHub repo + Vercel project + `admin.edubridgeacademy.com`.
+- [x] Set up the GitHub repo + Vercel project + `admin.edubridgeacademy.com` (live 2026-10-23).
+- [x] Fix the review findings: issues #1–#4 (2026-10-27), plus the new sign-in page.
+- [ ] Plan 2: the public site reads the store (design agreed; paused for the bank-transfer work).
+      This also covers the win-back feed: `www.edubridgeacademy.com/cohorts.json` will serve
+      the portal's `cohorts-feed.json`, so the Apps Script needs no change.
+- [ ] Analytics page (design in `docs/superpowers/specs/2026-10-23-analytics-design.md`).
+- [ ] Test two tabs publishing at once against the real store.
+- [ ] Update Vitest (dev-only security advisories).
