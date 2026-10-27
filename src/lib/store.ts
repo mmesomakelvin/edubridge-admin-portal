@@ -10,6 +10,8 @@ export const BACKUP_PREFIX = 'backups/'
  */
 export const VERSIONS_PREFIX = 'versions/'
 export const IMAGE_PREFIX = 'images/'
+/** The only pathnames the upload route writes: images/<slug>-<sha16>.webp (see imagePathname). */
+export const UPLOADED_IMAGE_PATH = /^images\/[a-z0-9-]+-[0-9a-f]{16}\.webp$/
 /** Public cache lifetime for content.json and the feed: "live within about a minute". */
 export const CONTENT_MAX_AGE_SECONDS = 60
 
@@ -56,8 +58,8 @@ export interface ContentStore {
   readBackup(pathname: string): Promise<Content>
   writeFeed(feed: CohortsFeed): Promise<void>
   putImage(pathname: string, body: Buffer, contentType: string): Promise<string>
-  /** True only for image URLs this store hands out from putImage; a newly published image must be one. */
-  ownsImageUrl(url: string): boolean
+  /** True only for an image this store saved through putImage and still holds; a newly published image must be one. */
+  ownsImageUrl(url: string): Promise<boolean>
 }
 
 const pad6 = (n: number) => String(n).padStart(6, '0')

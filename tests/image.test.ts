@@ -1,6 +1,8 @@
 import sharp from 'sharp'
 import { describe, expect, it } from 'vitest'
 import { MAX_UPLOAD_BYTES, imagePathname, processLandingImage } from '@/lib/image'
+import { PROGRAM_SLUGS } from '@/lib/programs'
+import { UPLOADED_IMAGE_PATH } from '@/lib/store'
 
 const make = (width: number, height: number, format: 'jpeg' | 'png' | 'webp' | 'gif' = 'jpeg') =>
   sharp({ create: { width, height, channels: 3, background: { r: 20, g: 120, b: 80 } } })
@@ -66,5 +68,10 @@ describe('processLandingImage', () => {
 describe('imagePathname', () => {
   it('names files by program and content hash', () => {
     expect(imagePathname('data-school', 'abcd')).toBe('images/data-school-abcd.webp')
+  })
+
+  // The stores only accept a newly published image at a pathname of this exact shape.
+  it.each(PROGRAM_SLUGS)('names %s uploads in the shape the stores accept', (slug) => {
+    expect(imagePathname(slug, '0123456789abcdef')).toMatch(UPLOADED_IMAGE_PATH)
   })
 })
