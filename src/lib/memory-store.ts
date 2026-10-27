@@ -16,6 +16,7 @@ export type MemoryStore = ContentStore & { files: Map<string, unknown> }
 /** In-process store for tests and local demo mode. Mirrors Blob semantics (etags, create-once, one file per version). */
 export function createMemoryStore(initial?: Content): MemoryStore {
   const files = new Map<string, unknown>()
+  const imageUrls = new Set<string>()
   let etagCounter = 0
   const nextEtag = () => `"m${++etagCounter}"`
   let current: { value: Content; etag: string } | null = initial ? { value: structuredClone(initial), etag: nextEtag() } : null
@@ -58,12 +59,15 @@ export function createMemoryStore(initial?: Content): MemoryStore {
     async writeFeed(feed) {
       files.set(FEED_PATH, structuredClone(feed))
     },
-    ownsImageUrl(url) {
-      return /^data:image\/(webp|jpeg|png);base64,/.test(url)
+    // Only the data URLs putImage handed out. This store backs local demo mode, never production.
+    async ownsImageUrl(url) {
+      return imageUrls.has(url)
     },
     async putImage(pathname, body, contentType) {
       files.set(pathname, Buffer.from(body))
-      return `data:${contentType};base64,${Buffer.from(body).toString('base64')}`
+      const url = `data:${contentType};base64,${Buffer.from(body).toString('base64')}`
+      imageUrls.add(url)
+      return url
     },
   }
 }

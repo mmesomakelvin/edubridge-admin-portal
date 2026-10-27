@@ -67,6 +67,13 @@ describe('publishProgram', () => {
     expect(await store.listBackups()).toEqual([])
   })
 
+  // Issue #4: a well-formed data image passed the URL check without ever going through the upload.
+  it('rejects a data image the store did not hand out', async () => {
+    const store = createMemoryStore(content())
+    const result = await publishProgram(store, { slug, draft: program({ landingImageUrl: 'data:image/png;base64,AAAA' }), baseVersion: 1, by, now: NOW })
+    expect(result).toMatchObject({ ok: false, reason: 'invalid', issues: [{ path: 'landingImageUrl' }] })
+  })
+
   it('accepts a landing image the store handed out', async () => {
     const store = createMemoryStore(content())
     const url = await store.putImage('images/school-of-finance-0123456789abcdef.webp', Buffer.from('img'), 'image/webp')
