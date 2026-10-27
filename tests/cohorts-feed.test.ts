@@ -15,6 +15,7 @@ describe('buildCohortsFeed', () => {
       },
     })
     expect(buildCohortsFeed(c)).toEqual({
+      version: 1,
       programs: {
         'school-of-finance': {
           url: 'https://www.edubridgeacademy.com/school-of-finance',

@@ -11,7 +11,7 @@ export function rollbackMessage(result: RollbackResult | { ok: false; reason: 'u
     const done = `Rolled back. Version ${result.restoredFrom}'s content is live again as version ${result.version}`
     return result.feedUpdated
       ? { tone: 'ok', text: `${done}.` }
-      : { tone: 'warn', text: `${done}, but the win-back cohort feed didn't update. Publish or roll back again, or tell a developer.` }
+      : { tone: 'warn', text: `${done}, but the win-back cohort feed didn't update yet. The portal retries it automatically when the Programs page opens and once a day.` }
   }
   if (result.reason === 'conflict') return { tone: 'warn', text: 'Someone published since this page loaded. Reload and try again.' }
   if (result.reason === 'no-backup') return { tone: 'warn', text: 'There is no earlier version to roll back to.' }

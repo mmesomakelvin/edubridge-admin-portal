@@ -66,6 +66,11 @@ per-user accounts.
   (`hello@edubridgeacademy.com`); password held by two staff. No per-user audit.
 - **Win-back sync:** on publish, the portal also writes `cohorts-feed.json`; the existing
   Google Apps Script win-back automation is repointed to read it, so dates never desync.
+  The feed records the content `version` it was built from. After writing it, the portal
+  re-reads the live content and rewrites the feed if a newer publish landed meanwhile. A
+  feed that is still behind (for example after a failed write) is rebuilt when the Programs
+  page opens and by a daily Vercel Cron (`/api/cron/sync-feed`, which needs `CRON_SECRET`
+  set in the Vercel project).
 
 ## How the portal stays safe (in plain English)
 

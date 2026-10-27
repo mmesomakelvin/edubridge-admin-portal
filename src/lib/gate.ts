@@ -8,9 +8,11 @@ export type GateDecision = 'allow' | 'redirect-to-login' | 'unauthorized'
  * - Server actions (POST + next-action header): let through to their own adminOrNull() check, which
  *   answers "unauthorized" in a form the page understands. The header is client-controlled, so it
  *   only counts on POST; a page GET that carries it is gated like any other page.
+ * - /api/cron/: Vercel Cron has no session; those routes check CRON_SECRET themselves (isCronRequest).
  */
 export function gateDecision(req: { pathname: string; method: string; isServerAction: boolean; allowed: boolean }): GateDecision {
   if (req.allowed || req.pathname === '/login') return 'allow'
+  if (req.pathname.startsWith('/api/cron/')) return 'allow'
   if (req.pathname.startsWith('/api/')) return 'unauthorized'
   if (req.method === 'POST' && req.isServerAction) return 'allow'
   return 'redirect-to-login'

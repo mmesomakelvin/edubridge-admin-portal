@@ -24,6 +24,11 @@ describe('gateDecision', () => {
     expect(gateDecision({ ...page, pathname: '/api/images', method: 'POST' })).toBe('unauthorized')
   })
 
+  it('lets cron calls reach their route, which checks CRON_SECRET itself', () => {
+    expect(gateDecision({ ...page, pathname: '/api/cron/sync-feed' })).toBe('allow')
+    expect(gateDecision({ ...page, pathname: '/api/cronx' })).toBe('unauthorized')
+  })
+
   it('leaves real server actions to their own session check', () => {
     expect(gateDecision({ ...page, pathname: '/programs/data-school', method: 'POST', isServerAction: true })).toBe('allow')
   })

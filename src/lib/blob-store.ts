@@ -178,6 +178,13 @@ export function createBlobStore(token = process.env.BLOB_READ_WRITE_TOKEN): Cont
     async writeFeed(feed: CohortsFeed) {
       await putJson(FEED_PATH, feed, { allowOverwrite: true, cacheControlMaxAge: CONTENT_MAX_AGE_SECONDS })
     },
+    async readFeedVersion() {
+      // May be a few seconds stale (Blob's CDN). A stale copy is an older one, so the worst case is a
+      // needless rebuild, never a missed one.
+      const result = await readJson(FEED_PATH)
+      const version = (result?.json as { version?: unknown } | undefined)?.version
+      return typeof version === 'number' ? version : null
+    },
     ownsImageUrl(url: string) {
       try {
         const parsed = new URL(url)

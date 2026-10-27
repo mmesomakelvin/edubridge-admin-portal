@@ -1,12 +1,34 @@
 import { describe, expect, it, vi } from 'vitest'
 import { createMemoryStore } from '@/lib/memory-store'
 import { publishProgram, rollbackLastPublish } from '@/lib/publish'
+import type { CohortsFeed } from '@/lib/cohorts-feed'
 import { FEED_PATH } from '@/lib/store'
 import { NOW, cohort, content, program } from './fixtures'
 
 const by = 'hello@edubridgeacademy.com'
 const slug = 'school-of-finance'
 const edited = () => program({ cohorts: [cohort({ seatsRemaining: 5 })] })
+const named = (name: string) => program({ cohorts: [cohort({ name })] })
+const feedOf = (store: ReturnType<typeof createMemoryStore>) => store.files.get(FEED_PATH) as CohortsFeed
+
+/** Holds the store's next feed write until release(); `reached` resolves once that write has started. */
+function pauseNextFeedWrite(store: ReturnType<typeof createMemoryStore>) {
+  const write = store.writeFeed
+  let release!: () => void
+  let arrived!: () => void
+  const gate = new Promise<void>((r) => (release = r))
+  const reached = new Promise<void>((r) => (arrived = r))
+  let paused = false
+  store.writeFeed = async (feed) => {
+    if (!paused) {
+      paused = true
+      arrived()
+      await gate
+    }
+    return write(feed)
+  }
+  return { reached, release }
+}
 
 describe('publishProgram', () => {
   it('saves the edit as a new version, backs up the old one and refreshes the feed', async () => {
@@ -21,7 +43,33 @@ describe('publishProgram', () => {
     const backups = await store.listBackups()
     expect(backups.map((b) => b.version)).toEqual([1])
     expect(await store.readBackup(backups[0]!.pathname)).toEqual(content())
-    expect(store.files.get(FEED_PATH)).toMatchObject({ programs: { [slug]: { cohorts: [{ id: 'cohort-2027-q1' }] } } })
+    expect(store.files.get(FEED_PATH)).toMatchObject({ version: 2, programs: { [slug]: { cohorts: [{ id: 'cohort-2027-q1' }] } } })
+  })
+
+  // Issue #1: A wrote content v2 and stalled before its feed write; B then published v3 and its feed.
+  // A's late write used to leave the v2 feed in place while v3 was live.
+  it('a publish whose feed write is overtaken leaves the newest feed in place', async () => {
+    const store = createMemoryStore(content())
+    const pause = pauseNextFeedWrite(store)
+    const a = publishProgram(store, { slug, draft: named('A'), baseVersion: 1, by, now: NOW })
+    await pause.reached
+    expect(await publishProgram(store, { slug, draft: named('B'), baseVersion: 2, by, now: NOW })).toMatchObject({ ok: true, version: 3 })
+    pause.release()
+
+    expect(await a).toEqual({ ok: true, version: 2, feedUpdated: true })
+    expect(feedOf(store)).toMatchObject({ version: 3, programs: { [slug]: { cohorts: [{ name: 'B' }] } } })
+  })
+
+  it('retries a feed write that fails once', async () => {
+    const store = createMemoryStore(content())
+    const write = store.writeFeed
+    let calls = 0
+    store.writeFeed = async (feed) => {
+      if (++calls === 1) throw new Error('blob hiccup')
+      return write(feed)
+    }
+    expect(await publishProgram(store, { slug, draft: edited(), baseVersion: 1, by, now: NOW })).toEqual({ ok: true, version: 2, feedUpdated: true })
+    expect(feedOf(store).version).toBe(2)
   })
 
   it('refuses with a conflict when someone published since the editor opened (stale baseVersion)', async () => {
@@ -139,6 +187,20 @@ describe('rollbackLastPublish', () => {
     expect(live).toMatchObject({ version: 3, updatedBy: by, updatedAt: later.toISOString() })
     expect(live.programs[slug]).toEqual(program())
     expect((await store.listBackups()).map((b) => b.version)).toEqual([2, 1])
+  })
+
+  // Issue #1, rollback side: the same overtaken feed write, starting from a rollback.
+  it('a rollback whose feed write is overtaken leaves the newest feed in place', async () => {
+    const store = createMemoryStore(content())
+    await publishProgram(store, { slug, draft: named('A'), baseVersion: 1, by, now: NOW })
+    const pause = pauseNextFeedWrite(store)
+    const rollback = rollbackLastPublish(store, { baseVersion: 2, by, now: NOW })
+    await pause.reached
+    await publishProgram(store, { slug, draft: named('B'), baseVersion: 3, by, now: NOW })
+    pause.release()
+
+    expect(await rollback).toMatchObject({ ok: true, version: 3, feedUpdated: true })
+    expect(feedOf(store)).toMatchObject({ version: 4, programs: { [slug]: { cohorts: [{ name: 'B' }] } } })
   })
 
   it('marks the backup it saves as replaced by a rollback, so history can say so', async () => {

@@ -3,6 +3,7 @@ import { ProgramDetail } from '@/components/ProgramDetail'
 import { ProgramRow } from '@/components/ProgramRow'
 import { StatCards } from '@/components/StatCards'
 import type { Content } from '@/lib/content-schema'
+import { reconcileFeed } from '@/lib/feed-sync'
 import { computeMetrics, publishesThisMonth, seatsLeftDelta } from '@/lib/metrics'
 import { PROGRAMS, getProgram } from '@/lib/programs'
 import { sortBackups } from '@/lib/store'
@@ -21,6 +22,8 @@ export default async function ProgramsPage({ searchParams }: { searchParams: Pro
   const selected = getProgram(p ?? '') ?? PROGRAMS[0]!
 
   const store = await getStore()
+  // Repairs a feed that a failed or overtaken publish left behind (normally a no-op read).
+  const feedHealth = await reconcileFeed(store, content)
   const backups = await store.listBackups()
   // The newest backup is the version before the current one; the dashboard still renders if it can't be read.
   const latest = sortBackups(backups)[0]
@@ -33,6 +36,12 @@ export default async function ProgramsPage({ searchParams }: { searchParams: Pro
         <header className="phead">
           <h1>Programs</h1>
         </header>
+        {feedHealth === 'failed' && (
+          <p className="banner banner-warn" role="alert">
+            The win-back cohort feed is behind the live content and couldn’t be updated just now. The portal retries when this
+            page opens and once a day. If this message stays, tell a developer.
+          </p>
+        )}
         <StatCards
           metrics={computeMetrics(content, now)}
           delta={seatsLeftDelta(content, previous, now)}

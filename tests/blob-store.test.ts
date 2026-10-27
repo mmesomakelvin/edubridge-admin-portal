@@ -169,6 +169,23 @@ describe('blob store', () => {
     })
   })
 
+  describe('readFeedVersion', () => {
+    const feedHolds = (json: unknown) =>
+      sdk.get.mockResolvedValue({ stream: new Response(JSON.stringify(json)).body, blob: { etag: '"feed"' } })
+
+    it('reads the content version the feed was built from', async () => {
+      feedHolds({ version: 7, programs: {} })
+      expect(await store().readFeedVersion()).toBe(7)
+      expect(sdk.get).toHaveBeenCalledWith('cohorts-feed.json', expect.anything())
+    })
+    it('is null for a feed from before versioning, or no feed at all', async () => {
+      feedHolds({ programs: {} })
+      expect(await store().readFeedVersion()).toBeNull()
+      sdk.get.mockResolvedValue(null)
+      expect(await store().readFeedVersion()).toBeNull()
+    })
+  })
+
   describe('createContent', () => {
     it('creates content.json (never overwriting) and then its version file', async () => {
       await store().createContent(content())
