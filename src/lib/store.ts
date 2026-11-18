@@ -12,8 +12,8 @@ export const VERSIONS_PREFIX = 'versions/'
 export const IMAGE_PREFIX = 'images/'
 /** The only pathnames the upload route writes: images/<slug>-<sha16>.webp (see imagePathname). */
 export const UPLOADED_IMAGE_PATH = /^images\/[a-z0-9-]+-[0-9a-f]{16}\.webp$/
-/** Public cache lifetime for content.json and the feed: "live within about a minute". */
-export const CONTENT_MAX_AGE_SECONDS = 60
+/** Public cache lifetime for content.json and the feed: about 5 minutes, which also keeps Blob reads inside Hobby limits. */
+export const CONTENT_MAX_AGE_SECONDS = 300
 
 export class ConflictError extends Error {
   constructor() {

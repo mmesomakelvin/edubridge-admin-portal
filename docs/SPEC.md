@@ -219,9 +219,9 @@ Each phase is shown locally / on a staging URL and approved before going live
 - **Vercel deploy quirk** (git-push deploys blocked; CLI deploys): the chosen runtime-store
   approach sidesteps it — a content change triggers no deploy.
 - **Shared account:** no per-user audit by design; "updatedBy" is always `hello@`.
-- **Caching freshness:** `content.json` is served with a **60 s** cache max-age (Blob
-  `cacheControlMaxAge: 60`), i.e. "live within about a minute". Revisit only if staff find
-  it too slow.
+- **Caching freshness:** `content.json` is served with a **5 minute** cache max-age (Blob
+  `cacheControlMaxAge: 300`, changed from 60 s for Plan 2 to stay inside Hobby limits).
+  Revisit only if staff find it too slow.
 - **Auth provider provisioning:** Google OAuth + Auth.js are free/first-party (no
   Marketplace dependency); Vercel Blob is first-party storage.
 
