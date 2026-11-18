@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { publishProgramAction } from '@/app/actions'
 import type { ProgramContent } from '@/lib/content-schema'
 import type { ProgramInfo } from '@/lib/programs'
+import { confirmTitle, reviewNotice } from '@/lib/public-site'
 import { liveServerIssues, type ServerIssues } from '@/lib/review-state'
 import { issueLabel, type Issue } from '@/lib/validate'
 
@@ -120,15 +121,13 @@ export function ReviewPanel({ info, draft, issues, changes, baseVersion, onDisca
       </div>
 
       <dialog ref={dialogRef} className="confirm" aria-labelledby="confirm-title">
-        <h2 id="confirm-title">
-          Publish {changes.length} change{changes.length === 1 ? '' : 's'} to the live site?
-        </h2>
+        <h2 id="confirm-title">{confirmTitle(changes.length)}</h2>
         <ul className="changes">
           {changes.map((line) => (
             <li key={line}>{line}</li>
           ))}
         </ul>
-        <p className="meta">The public site updates within about a minute. You can roll back from Publish history.</p>
+        <p className="meta">{reviewNotice()}</p>
         <div className="actions">
           <button type="button" className="btn btn-outline" disabled={pending} onClick={() => dialogRef.current?.close()}>
             Cancel

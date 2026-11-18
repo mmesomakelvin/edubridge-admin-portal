@@ -13,8 +13,8 @@ export function PricingTab({ draft, issues, dispatch }: { draft: ProgramContent;
       <p className="callout" role="note">
         <TriangleAlert size={17} aria-hidden />
         <span>
-          Changing an amount here does <b>not</b> change the Paystack payment page. Update the matching Paystack page too, or
-          learners will be charged the old price.
+          Changing a price here does <b>not</b> change what people are charged. They are charged from the Google Sheet’s{' '}
+          <b>Programs</b> tab and the Paystack payment page, so update both too, or learners will be charged the old price.
         </span>
       </p>
       <label className="field">

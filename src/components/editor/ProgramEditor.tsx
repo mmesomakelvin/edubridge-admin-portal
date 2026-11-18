@@ -7,6 +7,7 @@ import type { ProgramContent } from '@/lib/content-schema'
 import { describeChanges } from '@/lib/diff'
 import { draftReducer } from '@/lib/draft-reducer'
 import { liveUrl, type ProgramInfo } from '@/lib/programs'
+import { PUBLIC_SITE_READS_PORTAL, publishedNotice } from '@/lib/public-site'
 import { validateProgram, type Issue } from '@/lib/validate'
 import { CohortsTab } from './CohortsTab'
 import { ImageTab } from './ImageTab'
@@ -52,10 +53,15 @@ export function ProgramEditor({ info, initial, baseVersion, nowIso, publishedVer
         </Link>
         {publishedVersion !== null && (
           <p className="banner banner-ok" role="status">
-            Published version {publishedVersion}. The live site updates within about a minute.{' '}
-            <a href={liveUrl(info)} target="_blank" rel="noreferrer">
-              View live page ↗
-            </a>
+            {publishedNotice(publishedVersion)}
+            {PUBLIC_SITE_READS_PORTAL && (
+              <>
+                {' '}
+                <a href={liveUrl(info)} target="_blank" rel="noreferrer">
+                  View live page ↗
+                </a>
+              </>
+            )}
           </p>
         )}
         {feedWarning && (

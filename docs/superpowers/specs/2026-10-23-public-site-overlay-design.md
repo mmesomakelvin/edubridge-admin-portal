@@ -117,10 +117,11 @@ homepage hero still advertises HR "22 August 2026" and Data School "5 September 
 2. **Pricing warning:** the Pricing tab's callout currently says "Changing an amount here does **not** change the
    Paystack payment page…". It must also name the **Google Sheet's Programs tab**, because the Apps Script
    charges `total_price` / `part_payment_first_amount` / `part_payment_second_amount` from there. Proposed copy:
-   "Changing a price here updates the website only. People are charged from the Google Sheet's **Programs** tab
-   and the Paystack payment page, so update both too, or learners will be charged the old price."
+   "Changing a price here does **not** change what people are charged. They are charged from the Google Sheet's
+   **Programs** tab and the Paystack payment page, so update both too, or learners will be charged the old price."
 3. **Publish messages:** the review panel and program editor say the public site updates "within about a minute".
-   Change them to match the 5-minute cache, and don't let them promise a site update before the overlay is live.
+   Until the overlay is live they say the website isn't connected. `PUBLIC_SITE_READS_PORTAL` in
+   `src/lib/public-site.ts` switches them to the 5-minute wording and brings back the "View live page" link.
 4. No other portal change. The image-ownership rule already guarantees new images are this store's.
 
 ### B. Website: content loader and overlay (new, self-contained)
@@ -215,7 +216,8 @@ into the store, so run both again just before release.
    - live pages;
    - `curl /cohorts.json`;
    - an Apps Script dry run if available (`fetchCohortFeed()` returns programs).
-5. Tell staff they can now edit in the portal. Then do a real end-to-end check: publish a seat change, and see
+5. Set `PUBLIC_SITE_READS_PORTAL` to `true` in the portal and release it, so its messages match.
+   Tell staff they can now edit in the portal. Then do a real end-to-end check: publish a seat change, and see
    it on the site within ~5 minutes.
 
 ## Testing
