@@ -193,10 +193,11 @@ homepage hero still advertises HR "22 August 2026" and Data School "5 September 
 
 ## Rollout (owner approves each outward step)
 
-**Before step 1, re-sync the store.** Run `npm run parity` against the **production** store (`.env.local` normally
-points at the dev store, so this has to be set up deliberately). Bring the store in line with the website's current
-`data.json` values, and repeat until it passes. Dates edited directly on the website after this point must also go
-into the store, so re-run the check just before release.
+**Before step 1, re-sync the store.** Run `npm run sync-site:production` (see the README), then
+`npm run parity:production`. Both use the **production** store's key from `.env.production-sync` (`.env.local` normally
+points at the dev store, so this has to be set up deliberately). They bring the store in line with the website's current
+`data.json` cohorts and confirm the match. Dates edited directly on the website after this point must also go
+into the store, so run both again just before release.
 
 1. Build on a new branch **from the website's latest `main`**, once Vercel confirms production matches it. Keep changes self-contained
    to minimise conflicts with other work there.

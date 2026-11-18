@@ -43,6 +43,12 @@ The UI runs against an in-memory copy of today's site data. Production builds ig
 
 `CRON_SECRET` in `.env.example` is only needed in production (see below).
 
+**Copying the website's cohorts into the store:** until Plan 2 ships, dates are edited on the website first.
+`npm run sync-site -- --public-repo "<path to ea-website-revamp>"` previews what would change and writes nothing.
+Add `--apply --expect-store <id> --expect-version <n>` (both shown by the preview) to save it as one new version,
+which Publish history can undo. It copies cohorts only, never prices or images. For the live store, use
+`sync-site:production` and `parity:production`, which read the key from `.env.production-sync` (git-ignored).
+
 **How the store is laid out (Vercel Blob):** `content.json` is what the public site reads and is
 overwritten on every publish. Each version is also written once to `versions/content-vNNNNNN.json`;
 the portal reads the newest of those, because Blob's CDN can keep serving an overwritten public file

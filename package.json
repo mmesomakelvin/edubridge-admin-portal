@@ -13,7 +13,10 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "seed": "tsx --env-file=.env.local scripts/seed.ts",
-    "parity": "tsx --env-file=.env.local scripts/parity.ts"
+    "parity": "tsx --env-file=.env.local scripts/parity.ts",
+    "parity:production": "tsx --env-file=.env.production-sync scripts/parity.ts",
+    "sync-site": "tsx --env-file=.env.local scripts/sync-from-site.ts",
+    "sync-site:production": "tsx --env-file=.env.production-sync scripts/sync-from-site.ts"
   },
   "repository": {
     "type": "git",
