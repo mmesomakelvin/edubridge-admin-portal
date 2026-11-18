@@ -192,7 +192,7 @@ The code for this lives in `src/lib/csp.ts`, `src/proxy.ts`, `next.config.ts`,
 - [x] Fix the review findings: issues #1–#4 (2026-10-27), plus the new sign-in page.
 - [x] Plan 2, portal changes: 5-minute public cache, a Pricing warning naming the Google Sheet and Paystack,
       and publish messages that say the website isn't connected yet.
-- [ ] Plan 2: the public site reads the store (design agreed, website work not started). At go-live, set
+- [ ] Plan 2: the public site reads the store (design agreed; website work is on a private preview, not live). At go-live, set
       `PUBLIC_SITE_READS_PORTAL` to `true` in `src/lib/public-site.ts`. Re-sync the store with the
       website's current data first, or the site would go back to older dates.
       This also covers the win-back feed: `www.edubridgeacademy.com/cohorts.json` will serve
