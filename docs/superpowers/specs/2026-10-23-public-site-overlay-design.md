@@ -18,6 +18,7 @@ section wins.
   homepage's `product/sections/home/data.json` on the website first, regenerates `public/cohorts.json`, then commits
   and releases. That stays correct until Plan 2 goes live. After go-live the portal's values win, so a date edited
   only in `data.json` won't show on the site: dates must then be changed in the portal, and staff need telling.
+- **Website work so far.** Sections B to E are built on the website repo's `feat/portal-content-overlay` branch and run on a private Preview only. `VITE_PORTAL_CONTENT_URL` is set for Preview, not Production. Merging also switches `/cohorts.json` to the portal's feed, so re-sync the store first.
 - **Bank-transfer details and Paystack links are safe.** They live in each program's `paymentDetails`, which the
   overlay doesn't touch.
 
@@ -43,7 +44,7 @@ homepage hero still advertises HR "22 August 2026" and Data School "5 September 
 | Calendar page | Shows **all 7 programs** with portal dates (Securities Trading has since been added to the page). |
 | Win-back feed | `www.edubridgeacademy.com/cohorts.json` **serves the portal's live `cohorts-feed.json`**, so the Apps Script needs no change. This replaces most of the old "Plan 3". |
 | Fallback | If the portal can't be reached, the site uses built-in values, which are **refreshed from the portal on every website release**. |
-| Loading | Dates/prices/seats show a **brief placeholder**, then the portal's values; if the portal hasn't answered within **~1.5 s**, built-in values are shown. A visitor never sees an old value swap to a new one. |
+| Loading | Dates/prices/seats show a **brief placeholder**, then the portal's values; if the portal hasn't answered within **about 3 s** (raised from 1.5 s on 2026-11-18, after timeouts on mobile data), built-in values are shown. A visitor never sees an old value swap to a new one. |
 | Prices charged | Unchanged mechanism: the Apps Script charges from the Google Sheet's **Programs tab** (`total_price`, `part_payment_*_amount`) and that tab's Paystack links. **Staff update the Sheet and Paystack when they change a price in the portal**; the portal's Pricing warning is strengthened to say so. Automating it is a possible later project. |
 | Release | The owner **promotes the approved preview to production** in the Vercel dashboard ("Promote to Production"), so what goes live is exactly what was checked. No CLI needed. |
 | Plan | Vercel **Hobby** (owner's choice, recorded in Plan 1). |
@@ -127,7 +128,7 @@ homepage hero still advertises HR "22 August 2026" and Data School "5 September 
 ### B. Website: content loader and overlay (new, self-contained)
 
 - **`src/lib/portal-content.ts`** (or similar), with no React dependencies:
-  - `loadPortalContent(url, { timeoutMs: 1500 })`: a single shared fetch per page load (module-level
+  - `loadPortalContent(url, { timeoutMs: 3000 })`: a single shared fetch per page load (module-level
     promise). On timeout, network error, non-200, or failed validation it resolves to `null`. It never throws.
   - Light runtime validation of the shape: `programs[slug].cohorts[]` with string ISO dates and numeric seats,
     `pricing[]` with `id/priceLabel/amount`, `heroPriceLabel`, `landingImageUrl`. Malformed **per program** →
@@ -148,7 +149,7 @@ homepage hero still advertises HR "22 August 2026" and Data School "5 September 
 - **React integration:** a small hook/provider (e.g. `usePortalContent()`), used where each surface reads its
   data.
   - `*Preview.tsx` for program pages and forms, `HomePreview`/`ProgramsPreview`, `HeroSection`, `CalendarPreview`.
-  - While loading (≤1.5 s), **only the editable fields** render a placeholder (a skeleton/grey bar). The rest of
+  - While loading (≤3 s), **only the editable fields** render a placeholder (a skeleton/grey bar). The rest of
     the page renders immediately.
   - The enrolment form's cohort list must not let anyone submit until content is resolved, whether from the
     portal or the fallback.
@@ -240,7 +241,7 @@ into the store, so run both again just before release.
 - **Read `content.json` from the browser directly.** Blob allows it via CORS. A server function in front would
   add complexity without reducing Blob reads.
 - **5-minute cache:** set by the portal's `cacheControlMaxAge: 300`, which also applies to the feed.
-- **Placeholder only on editable fields;** the 1.5 s timeout before falling back.
+- **Placeholder only on editable fields;** the 3 s timeout before falling back.
 - **Generated fallback file** rather than rewriting committed `data.json` at build time.
 - **Securities Trading slide image:** the existing Securities Trading hero photo.
 - **Design doc location:** this repo (where the project's designs live); the code goes in `ea-website-revamp`.
