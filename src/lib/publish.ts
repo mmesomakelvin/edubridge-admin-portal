@@ -33,7 +33,7 @@ export type RollbackResult =
  * writeContent only throws when the content did not land (blob-store checks before reporting), so any
  * failure removes the backup saved for it and history never shows a publish that didn't happen.
  */
-async function commit(
+export async function commitContent(
   store: ContentStore,
   next: Content,
   etag: string,
@@ -109,7 +109,7 @@ export async function publishProgram(store: ContentStore, input: PublishInput): 
     updatedBy: input.by,
     programs: { ...content.programs, [input.slug]: draft },
   }
-  const result = await commit(store, next, etag, backup)
+  const result = await commitContent(store, next, etag, backup)
   return result.ok ? { ok: true, version: next.version, feedUpdated: result.feedUpdated } : { ok: false, reason: 'conflict' }
 }
 
@@ -124,7 +124,7 @@ export async function rollbackLastPublish(store: ContentStore, input: RollbackIn
 
   const backup = await store.writeBackup(content, now, { rollbackTo: target.version })
   const next: Content = { ...restored, version: content.version + 1, updatedAt: now.toISOString(), updatedBy: input.by }
-  const result = await commit(store, next, etag, backup)
+  const result = await commitContent(store, next, etag, backup)
   return result.ok
     ? { ok: true, version: next.version, restoredFrom: target.version, feedUpdated: result.feedUpdated }
     : { ok: false, reason: 'conflict' }

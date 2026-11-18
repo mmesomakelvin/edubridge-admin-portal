@@ -33,6 +33,11 @@ const toJson = (data: unknown) => JSON.stringify(data, null, 2)
 // The SDK has no dedicated class for "allowOverwrite: false and the pathname is taken".
 const isAlreadyExists = (error: unknown) => error instanceof BlobError && /already exists/i.test(error.message)
 
+/** Read-write tokens look like vercel_blob_rw_<storeId>_<secret>. The id is public: it's in every blob URL. */
+export function storeIdFromToken(token: string): string {
+  return (token.split('_')[3] ?? '').toLowerCase()
+}
+
 /**
  * Vercel Blob implementation. Public-read objects; writes need BLOB_READ_WRITE_TOKEN (server only).
  *
@@ -46,8 +51,7 @@ const isAlreadyExists = (error: unknown) => error instanceof BlobError && /alrea
 export function createBlobStore(token = process.env.BLOB_READ_WRITE_TOKEN): ContentStore {
   if (!token) throw new Error('BLOB_READ_WRITE_TOKEN is not set')
   const base = { access: 'public' as const, token, addRandomSuffix: false }
-  // Read-write tokens look like vercel_blob_rw_<storeId>_<secret>; public URLs are https://<storeid>.public.blob.vercel-storage.com.
-  const storeHost = `${(token.split('_')[3] ?? '').toLowerCase()}.public.blob.vercel-storage.com`
+  const storeHost = `${storeIdFromToken(token)}.public.blob.vercel-storage.com`
 
   async function readJson(pathname: string): Promise<{ json: unknown; etag: string } | null> {
     const result = await get(pathname, { access: 'public', token, useCache: false })

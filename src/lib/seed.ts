@@ -53,12 +53,17 @@ function programFields(data: z.infer<typeof SourceProgram>) {
   return { ...parsed, heroPriceLabel: data.heroContent.priceLabel }
 }
 
+/** One program's editable fields as the website's data file has them now. */
+export async function readSiteProgram(source: SeedSource, slug: ProgramSlug) {
+  return programFields(SourceProgram.parse(await source.readProgramData(slug)))
+}
+
 /** Build content.json v1 from today's site data. Card images are uploaded byte-for-byte for exact parity. */
 export async function buildSeed(source: SeedSource, upload: UploadImage, now: Date = new Date()): Promise<Content> {
   const home = SourceHome.parse(await source.readHomeData())
   const programs: Content['programs'] = {}
   for (const info of PROGRAMS) {
-    const fields = programFields(SourceProgram.parse(await source.readProgramData(info.slug)))
+    const fields = await readSiteProgram(source, info.slug)
     const relPath = cardImagePath(home, info)
     const ext = extname(relPath).toLowerCase()
     const contentType = CONTENT_TYPES[ext]
@@ -80,7 +85,7 @@ export async function checkParity(content: Content, source: SeedSource, fetchByt
       problems.push(`${info.slug}: missing from content.json`)
       continue
     }
-    const expected = programFields(SourceProgram.parse(await source.readProgramData(info.slug)))
+    const expected = await readSiteProgram(source, info.slug)
     const imageBytes = await source.readPublicFile(cardImagePath(home, info))
     if (!isDeepStrictEqual(entry.cohorts, expected.cohorts)) problems.push(`${info.slug}: cohorts differ`)
     if (!isDeepStrictEqual(entry.pricing, expected.pricing)) problems.push(`${info.slug}: pricing differs`)
