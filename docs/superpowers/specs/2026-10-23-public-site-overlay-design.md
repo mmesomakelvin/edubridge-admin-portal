@@ -1,7 +1,25 @@
 # Plan 2 — Public site reads the portal (design)
 
 Status: agreed in brainstorm 2026-10-23. Builds on `docs/SPEC.md` §2–3 and §7 (the "overlay"), which this
-document refines with the owner's decisions and what the website code actually looks like today.
+document refines with the owner's decisions and what the website code looked like on that date.
+
+## Update (2026-11-18)
+
+The website moved on after this design was agreed. Where this section and the 2026-10-23 recon differ, this
+section wins.
+
+- **Re-sync the store first.** Cohort dates were edited directly in the website's `data.json` files in November
+  (2027 dates on 2 November, a started Securities Trading cohort removed on 12 November). The store may not have
+  those edits. Shipping the overlay against a stale store would put older dates back on the site.
+- **Build from the website's `main`.** `feat/onboarding-form` was merged into `main` on 2026-11-12 and is now
+  behind it. Confirm in Vercel what production is built from before starting; this wasn't verified on 2026-11-18.
+- **The Calendar page already lists Securities Trading.** The homepage slideshow still has no slide for it.
+- **How dates are updated today.** The owner edits each program's `product/sections/<slug>/data.json` and the
+  homepage's `product/sections/home/data.json` on the website first, regenerates `public/cohorts.json`, then commits
+  and releases. That stays correct until Plan 2 goes live. After go-live the portal's values win, so a date edited
+  only in `data.json` won't show on the site: dates must then be changed in the portal, and staff need telling.
+- **Bank-transfer details and Paystack links are safe.** They live in each program's `paymentDetails`, which the
+  overlay doesn't touch.
 
 ## Why
 
@@ -22,7 +40,7 @@ homepage hero still advertises HR "22 August 2026" and Data School "5 September 
 | Rollout | **Invisible first**: release while the store holds what the site shows today, confirm nothing unexpected changed, *then* tell staff to start editing. |
 | Approval | The owner reviews a **private Vercel preview link** before anything reaches production. |
 | Hero slideshow | Its "Next cohort" dates come from the portal, and a **Securities Trading slide is added**. |
-| Calendar page | Shows **all 7 programs** with portal dates (Securities Trading is missing today). |
+| Calendar page | Shows **all 7 programs** with portal dates (Securities Trading has since been added to the page). |
 | Win-back feed | `www.edubridgeacademy.com/cohorts.json` **serves the portal's live `cohorts-feed.json`**, so the Apps Script needs no change. This replaces most of the old "Plan 3". |
 | Fallback | If the portal can't be reached, the site uses built-in values, which are **refreshed from the portal on every website release**. |
 | Loading | Dates/prices/seats show a **brief placeholder**, then the portal's values; if the portal hasn't answered within **~1.5 s**, built-in values are shown. A visitor never sees an old value swap to a new one. |
@@ -30,7 +48,7 @@ homepage hero still advertises HR "22 August 2026" and Data School "5 September 
 | Release | The owner **promotes the approved preview to production** in the Vercel dashboard ("Promote to Production"), so what goes live is exactly what was checked. No CLI needed. |
 | Plan | Vercel **Hobby** (owner's choice, recorded in Plan 1). |
 
-## Current state (recon of `ea-website-revamp`, 2026-10-23)
+## State on 2026-10-23 (recon of `ea-website-revamp`; see the update above for later changes)
 
 - **Stack:** Vite + React 19 single-page app, react-router 7, Tailwind 4. No test runner yet.
   `npm run build` = `prebuild` (`scripts/generate-cohorts-feed.mjs` → `public/cohorts.json`) + `tsc -b && vite build`.
@@ -86,7 +104,7 @@ homepage hero still advertises HR "22 August 2026" and Data School "5 September 
 - A visitor seeing an old date or price flick to a new one.
 - A website build or deploy failing because the portal store can't be reached.
 - An image loaded from anywhere but this store's `images/` folder (or the site itself).
-- Undoing or clashing with the ongoing `feat/onboarding-form` work.
+- Undoing or clashing with work already on the website's `main`, including dates edited there.
 - Running past Hobby limits silently: the design must stay well inside 10k simple Blob operations/month.
 
 ## Design
@@ -101,7 +119,9 @@ homepage hero still advertises HR "22 August 2026" and Data School "5 September 
    charges `total_price` / `part_payment_first_amount` / `part_payment_second_amount` from there. Proposed copy:
    "Changing a price here updates the website only. People are charged from the Google Sheet's **Programs** tab
    and the Paystack payment page, so update both too, or learners will be charged the old price."
-3. No other portal change. The image-ownership rule already guarantees new images are this store's.
+3. **Publish messages:** the review panel and program editor say the public site updates "within about a minute".
+   Change them to match the 5-minute cache, and don't let them promise a site update before the overlay is live.
+4. No other portal change. The image-ownership rule already guarantees new images are this store's.
 
 ### B. Website: content loader and overlay (new, self-contained)
 
@@ -141,7 +161,7 @@ homepage hero still advertises HR "22 August 2026" and Data School "5 September 
   and a background image using the existing Securities Trading hero photo in `public/images/`.
   - Its `nextCohort` is derived like the others.
   - `HeroSection` uses `max(bgImages.length, slides.length)`, so check that the image/slide pairing still lines up.
-- `CalendarPreview` imports Securities Trading's `data.json` too and feeds all 7 through the overlay.
+- `CalendarPreview` already imports all 7 programs' `data.json`; feed all 7 through the overlay.
 
 ### D. Website: `/cohorts.json` serves the portal feed
 
@@ -173,19 +193,24 @@ homepage hero still advertises HR "22 August 2026" and Data School "5 September 
 
 ## Rollout (owner approves each outward step)
 
-1. Build on a new branch **from `feat/onboarding-form`** (what's live), not `main`. Keep changes self-contained
-   to minimise conflicts with the ongoing work there.
+**Before step 1, re-sync the store.** Run `npm run parity` against the **production** store (`.env.local` normally
+points at the dev store, so this has to be set up deliberately). Bring the store in line with the website's current
+`data.json` values, and repeat until it passes. Dates edited directly on the website after this point must also go
+into the store, so re-run the check just before release.
+
+1. Build on a new branch **from the website's latest `main`**, once Vercel confirms production matches it. Keep changes self-contained
+   to minimise conflicts with other work there.
 2. Push → automatic **Vercel Preview**.
    - The owner clicks through: home (hero slides incl. Securities Trading, cards), Programs, all 7 program
      pages, an enrolment form's cohort list, and Calendar.
    - Expected visible differences only: corrected hero-slide/card next-cohort labels, the new Securities Trading
-     slide, and Securities Trading on the calendar. Everything else is identical.
+     slide. Everything else is identical.
    - Also test with the store URL deliberately broken, so the fallback shows.
-3. Coordinate with the other session's branch: bring in its latest changes, then merge this work into the branch
+3. Bring in the latest website `main`, re-run the parity check, then merge this work into the branch
    that production deploys from.
 4. **Production release:** after the owner's OK, the owner clicks **Promote to Production** on the approved
-   preview in the Vercel dashboard. Promote the preview built from the merged branch, so it includes the other
-   session's work. Then verify:
+   preview in the Vercel dashboard. Promote the preview built from the merged branch, so it includes the latest
+   website work. Then verify:
    - live pages;
    - `curl /cohorts.json`;
    - an Apps Script dry run if available (`fetchCohortFeed()` returns programs).

@@ -8,11 +8,12 @@ or a redeploy. Once the public site (`www.edubridgeacademy.com`) reads the conte
 This is a **new, separate project** from the public marketing site. It lives on its own
 URL (`admin.edubridgeacademy.com`) with its own deployment, secrets, and login.
 
-> **Status (2026-10-27):** live at **https://admin.edubridgeacademy.com** since 2026-10-23.
+> **Status (2026-11-18):** live at **https://admin.edubridgeacademy.com** since 2026-10-23.
 > **Not yet connected to the public site:** publishing changes nothing on `www.edubridgeacademy.com`
 > until Plan 2 ships, so don't publish real edits yet. The first review's issues #1–#4 are fixed
-> (PRs #7, #9, #10). Plan 2 is designed and paused while the public site's bank-transfer payment work
-> is finished.
+> (PRs #7, #9, #10). Plan 2 is designed but not started. The website's cohort dates were edited directly
+> in November, so the store may be behind and must be re-synced before Plan 2 ships. Until then, keep
+> changing dates in the website's `data.json` files; once Plan 2 is live, change them here instead.
 
 ---
 
@@ -183,7 +184,10 @@ The code for this lives in `src/lib/csp.ts`, `src/proxy.ts`, `next.config.ts`,
 - [x] Build dashboard + program editor (cohorts / pricing / image) + review-and-publish.
 - [x] Set up the GitHub repo + Vercel project + `admin.edubridgeacademy.com` (live 2026-10-23).
 - [x] Fix the review findings: issues #1–#4 (2026-10-27), plus the new sign-in page.
-- [ ] Plan 2: the public site reads the store (design agreed; paused for the bank-transfer work).
+- [ ] Correct the portal's publish messages: they say the public site updates within about a minute,
+      but publishing doesn't reach the public site until Plan 2 ships.
+- [ ] Plan 2: the public site reads the store (design agreed, not started). Re-sync the store with the
+      website's current data first, or the site would go back to older dates.
       This also covers the win-back feed: `www.edubridgeacademy.com/cohorts.json` will serve
       the portal's `cohorts-feed.json`, so the Apps Script needs no change.
 - [ ] Analytics page (design in `docs/superpowers/specs/2026-10-23-analytics-design.md`).
