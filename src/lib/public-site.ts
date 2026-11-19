@@ -1,5 +1,5 @@
-/** Set to true in the release that connects the public website to this store (Plan 2 go-live). */
-export const PUBLIC_SITE_READS_PORTAL = false
+/** True since Plan 2 went live on 2026-11-19: the public website reads this store. */
+export const PUBLIC_SITE_READS_PORTAL = true
 
 const NOT_CONNECTED = "The public website isn't connected yet, so customers won't see this change."
 const UPDATES_SOON = 'The public website updates within about 5 minutes.'

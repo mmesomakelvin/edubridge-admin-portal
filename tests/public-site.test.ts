@@ -4,7 +4,7 @@ import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 import { PricingTab } from '@/components/editor/PricingTab'
-import { confirmTitle, publishedNotice, reviewNotice } from '@/lib/public-site'
+import { PUBLIC_SITE_READS_PORTAL, confirmTitle, publishedNotice, reviewNotice } from '@/lib/public-site'
 import { CONTENT_MAX_AGE_SECONDS } from '@/lib/store'
 import { program } from './fixtures'
 
@@ -33,6 +33,17 @@ describe('publish wording once the website is connected', () => {
   it('promises the five-minute update', () => {
     expect(reviewNotice(true)).toBe('The public website updates within about 5 minutes. You can roll back from Publish history.')
     expect(publishedNotice(4, true)).toBe('Published version 4. The public website updates within about 5 minutes.')
+  })
+})
+
+describe('after go-live (19 Nov 2026)', () => {
+  it('knows the public website reads the portal', () => {
+    expect(PUBLIC_SITE_READS_PORTAL).toBe(true)
+  })
+
+  it('tells staff by default that the website follows within about 5 minutes', () => {
+    expect(confirmTitle(1)).toBe('Publish 1 change to the live site?')
+    expect(publishedNotice(5)).toBe('Published version 5. The public website updates within about 5 minutes.')
   })
 })
 
