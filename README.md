@@ -2,18 +2,17 @@
 
 Internal admin portal that lets trusted EduBridge staff change **program dates**,
 **pricing**, and **landing/placeholder images** for every course — without a developer
-or a redeploy. Once the public site (`www.edubridgeacademy.com`) reads the content store
-(Plan 2, a follow-up in the public repo), published changes will appear there within about 5 minutes.
+or a redeploy. The public site (`www.edubridgeacademy.com`) reads the content store, so published
+changes appear there within about 5 minutes.
 
 This is a **new, separate project** from the public marketing site. It lives on its own
 URL (`admin.edubridgeacademy.com`) with its own deployment, secrets, and login.
 
-> **Status (2026-11-18):** live at **https://admin.edubridgeacademy.com** since 2026-10-23.
-> **Not yet connected to the public site:** publishing changes nothing on `www.edubridgeacademy.com`
-> until Plan 2 ships, so don't publish real edits yet. The first review's issues #1–#4 are fixed
-> (PRs #7, #9, #10). Plan 2 is designed but not started. The website's cohort dates were edited directly
-> in November, so the store may be behind and must be re-synced before Plan 2 ships. Until then, keep
-> changing dates in the website's `data.json` files; once Plan 2 is live, change them here instead.
+> **Status (2026-11-19):** live at **https://admin.edubridgeacademy.com** since 2026-10-23, and
+> **connected to the public site since 2026-11-19** (Plan 2, website PR #31). Change dates, seats, prices
+> and landing images here, not in the website's `data.json` files. A price change must also be made in
+> the Google Sheet's Programs tab and on Paystack, which is where learners are charged. The website's
+> FAQ answers that mention prices are still typed by hand.
 
 ---
 
@@ -23,9 +22,9 @@ URL (`admin.edubridgeacademy.com`) with its own deployment, secrets, and login.
    rollout and testing. The original look is in [`design/mockup.html`](design/mockup.html).
 2. **How it was built:** [`docs/superpowers/plans/2026-10-14-admin-portal.md`](docs/superpowers/plans/2026-10-14-admin-portal.md)
    — the task-by-task plan (Tasks 1–18).
-3. **Next up:** Plan 2, the public site reads the portal,
+3. **How the website reads the portal (Plan 2, live):**
    [`docs/superpowers/specs/2026-10-23-public-site-overlay-design.md`](docs/superpowers/specs/2026-10-23-public-site-overlay-design.md).
-   After that, the Analytics page,
+   **Next up:** the Analytics page,
    [`docs/superpowers/specs/2026-10-23-analytics-design.md`](docs/superpowers/specs/2026-10-23-analytics-design.md).
 4. **To run it locally:** see *Local development* below. **Where the live pieces are:** see *Production* below.
 
@@ -43,7 +42,8 @@ The UI runs against an in-memory copy of today's site data. Production builds ig
 
 `CRON_SECRET` in `.env.example` is only needed in production (see below).
 
-**Copying the website's cohorts into the store:** until Plan 2 ships, dates are edited on the website first.
+**Copying the website's cohorts into the store:** this was needed before go-live, when dates were edited on the
+website first. Since 2026-11-19 the store is the source, so use it only to recover from an emergency website edit.
 `npm run sync-site -- --public-repo "<path to ea-website-revamp>"` previews what would change and writes nothing.
 Add `--apply --expect-store <id> --expect-version <n>` (both shown by the preview) to save it as one new version,
 which Publish history can undo. It copies cohorts only, never prices or images. For the live store, use
@@ -192,11 +192,11 @@ The code for this lives in `src/lib/csp.ts`, `src/proxy.ts`, `next.config.ts`,
 - [x] Fix the review findings: issues #1–#4 (2026-10-27), plus the new sign-in page.
 - [x] Plan 2, portal changes: 5-minute public cache, a Pricing warning naming the Google Sheet and Paystack,
       and publish messages that say the website isn't connected yet.
-- [ ] Plan 2: the public site reads the store (design agreed; website work is on a private preview, not live). At go-live, set
-      `PUBLIC_SITE_READS_PORTAL` to `true` in `src/lib/public-site.ts`. Re-sync the store with the
-      website's current data first, or the site would go back to older dates.
-      This also covers the win-back feed: `www.edubridgeacademy.com/cohorts.json` will serve
-      the portal's `cohorts-feed.json`, so the Apps Script needs no change.
+- [x] Plan 2: the public site reads the store (live 2026-11-19, website PR #31). Program pages, enrolment
+      forms, homepage and Programs cards, the slideshow and the calendar use the store, with release-time
+      backup values if it can't be reached. `www.edubridgeacademy.com/cohorts.json` serves the store's
+      `cohorts-feed.json`, so the win-back Apps Script needed no change. `PUBLIC_SITE_READS_PORTAL` is `true`.
+- [ ] Website FAQ answers that mention prices are typed by hand; move them to the store or word them without prices.
 - [ ] Analytics page (design in `docs/superpowers/specs/2026-10-23-analytics-design.md`).
 - [ ] Test two tabs publishing at once against the real store.
 - [x] Clear the security advisories: Next.js 16.4.6, Vitest 4.1.12, and `overrides` in `package.json`

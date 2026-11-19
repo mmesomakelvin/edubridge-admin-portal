@@ -1,6 +1,6 @@
 # Plan 2 — Public site reads the portal (design)
 
-Status: agreed in brainstorm 2026-10-23. Builds on `docs/SPEC.md` §2–3 and §7 (the "overlay"), which this
+Status: **live since 2026-11-19** (website PR #31, portal `PUBLIC_SITE_READS_PORTAL` on). Agreed in brainstorm 2026-10-23. Builds on `docs/SPEC.md` §2–3 and §7 (the "overlay"), which this
 document refines with the owner's decisions and what the website code looked like on that date.
 
 ## Update (2026-11-18)
