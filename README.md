@@ -199,4 +199,6 @@ The code for this lives in `src/lib/csp.ts`, `src/proxy.ts`, `next.config.ts`,
       the portal's `cohorts-feed.json`, so the Apps Script needs no change.
 - [ ] Analytics page (design in `docs/superpowers/specs/2026-10-23-analytics-design.md`).
 - [ ] Test two tabs publishing at once against the real store.
-- [ ] Update Vitest (dev-only security advisories).
+- [x] Clear the security advisories: Next.js 16.4.6, Vitest 4.1.12, and `overrides` in `package.json`
+      pinning undici and zod under `@vercel/blob` (2026-11-19). Remove the overrides once `@vercel/blob`
+      ships fixed dependencies.
